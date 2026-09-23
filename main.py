@@ -70,7 +70,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "alpha-secure-key-2026")
 if not firebase_admin._apps:
     cred = credentials.Certificate("firebase-key.json") 
     firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
+        'databaseURL': 'https://xdanous-5a6c4-default-rtdb.firebaseio.com/'
     })
 
 # 2. دالة جلب البيانات من السحابة
@@ -216,13 +216,6 @@ def send_whatsapp_2fa(phone_number: str, username: str, password: str, secret_ke
 👤 *اسم المستخدم:* {username}
 🔑 *كلمة المرور:* {password}
 
-🛡️ *خطوات تفعيل الحماية (Google Authenticator):*
-1️⃣ افتح تطبيق Google Authenticator.
-2️⃣ اختر (إدخال مفتاح الإعداد).
-3️⃣ اسم الحساب: Tounsibet Core - {username}
-4️⃣ المفتاح السري:
-*{secret_key}*
-
 ⚠️ _يرجى حذف هذه الرسالة بعد التفعيل للحفاظ على سرية بياناتك._"""
 
     if not phone_number.startswith("+"):
@@ -260,8 +253,8 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://tounsibet.com",
-        "https://tounsibet-player-frontend.onrender.com",
+        "https://xdanous.com",
+        "https://xdanous-player-frontend.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500"
     ],
@@ -1228,24 +1221,6 @@ class Reset2FARequest(BaseModel):
     admin_username: str
     target_username: str
 
-@app.post("/api/admin/reset-2fa")
-async def reset_2fa(req: Reset2FARequest, current_user: str = Depends(get_admin_user)):
-    target = req.target_username.lower().strip()
-    db = load_db()
-    
-    target_user = next((u for u in db if str(u.get("username", "")).lower() == target), None)
-    if not target_user:
-        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-        
-    # توليد مفتاح جديد كلياً
-    import pyotp
-    new_secret = pyotp.random_base32()
-    target_user["two_factor_secret"] = new_secret
-    save_db(db)
-    
-    log_admin_action(current_user, "RESET_2FA", f"Reset 2FA for {target}")
-    
-    return {"status": "success", "message": "2FA réinitialisé avec succès", "new_secret": new_secret}
 
 @app.post("/api/admin/configure-account")
 async def configure_account(req: ConfigureAccountRequest):
@@ -1371,7 +1346,7 @@ async def launch_casino(request: Request):
             "provider_code": data.get("provider_code"),
             "game_code": data.get("game_code"),
             "lang": "fr",
-            "lobby_url": "https://tounsibet.com/#casino"
+            "lobby_url": "https://xdanous.com/#casino"
         }
         headers = {"Content-Type": "application/json"}
         endpoint = PROVIDER_ENDPOINT.rstrip('/')
@@ -1464,28 +1439,7 @@ async def process_login_router(request: Request, username: str = Form(...), pass
 
     role = user.get("role")
     
-    # فرض التحقق الثنائي (2FA) بصرامة على جميع الإداريين دون استثناء
-    if role in ["owner", "super_admin", "admin"]:
-        request.session["pending_user"] = uname
-        request.session["pending_role"] = role
-        
-        html_form = """
-        <html dir="rtl">
-        <head><title>التحقق الثنائي</title></head>
-        <body style="background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Tahoma, sans-serif;">
-            <div style="background-color: #2d2d2d; padding: 40px; border-radius: 10px; text-align: center; border: 1px solid #444;">
-                <h2 style="color: #00d2ff;">التحقق الثنائي (2FA) 🔐</h2>
-                <p style="color: #ccc;">أدخل الكود من تطبيق Google Authenticator</p>
-                <form action="/verify-2fa" method="post">
-                    <input type="text" name="totp_code" placeholder="أدخل 6 أرقام" required style="padding: 10px; font-size: 20px; text-align: center; letter-spacing: 5px; border-radius: 5px; border: none; outline: none; margin-bottom: 20px; font-weight: bold;"><br>
-                    <button type="submit" style="padding: 10px 30px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">دخول آمن</button>
-                </form>
-            </div>
-        </body>
-        </html>
-        """
-        return HTMLResponse(content=html_form)
-
+    
     request.session["username"] = user["username"]
     request.session["role"] = user["role"]
     
@@ -1532,51 +1486,6 @@ async def login_user(request: Request, req: LoginRequest):
         
         return JSONResponse(status_code=500, content={"detail": f"خطأ داخلي: {str(e)}"})
 
-@app.post("/api/verify-2fa")
-@limiter.limit("5/minute")
-async def verify_2fa_api(request: Request, req: Verify2FARequest):
-    db = load_db()
-    user = next((u for u in db if u["username"] == req.username), None)
-    
-    if not user:
-        raise HTTPException(status_code=401, detail="Nom d'utilisateur incorrect")
-        
-    secret = user.get("two_factor_secret")
-    if not secret:
-        raise HTTPException(status_code=400, detail="لم يتم تفعيل المصادقة الثنائية!")
-        
-    totp = pyotp.TOTP(secret)
-    if totp.verify(req.totp_code):
-        access_token = create_access_token(data={"sub": user["username"], "role": user["role"]})
-        
-        # 👈 التعديل هنا: إرجاع الرد بنفس صيغة الدخول العادي تماماً ليحفظه المتصفح
-        return JSONResponse(status_code=200, content={
-            "message": "success", 
-            "username": user["username"],
-            "role": user["role"],
-            "access_token": access_token,
-            "balance": float(user.get("balance", 0.0))
-        })
-    else:
-        raise HTTPException(status_code=400, detail="كود Google Authenticator غير صحيح!")
-@app.get("/setup-2fa/{username}")
-async def setup_2fa(username: str):
-    db = load_db()
-    user = next((u for u in db if u["username"] == username), None)
-    if not user: return HTMLResponse("<h3 style='text-align:center; color:red;'>المستخدم غير موجود!</h3>")
-    
-    secret = pyotp.random_base32()
-    user["two_factor_secret"] = secret
-    
-    totp = pyotp.TOTP(secret)
-    uri = totp.provisioning_uri(name=username, issuer_name="Tounsibet Casino")
-    
-    img = qrcode.make(uri)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    
-    return StreamingResponse(buf, media_type="image/png")
 
 # ==========================================
 # دمج نظام BSW Aggregator Callbacks
@@ -2418,7 +2327,7 @@ async def launch_sportsbook(request: Request):
                 "session_id": f"sess_{uuid.uuid4().hex[:10]}",
                 "player_id": user_code,
                 "player_name": user_code,
-                "return_url": "https://tounsibet.com/"
+                "return_url": "https://xdanous.com/"
             }
             headers = get_smpl_headers_and_sign(payload)
             headers['Content-Type'] = 'application/json'
@@ -2448,7 +2357,7 @@ async def launch_sportsbook(request: Request):
                 "game_code": str(data.get("game_code", "SPORTSBOOK")),
                 "user_code": user_code,
                 "lang": "fr",
-                "lobby_url": "https://tounsibet.com/"
+                "lobby_url": "https://xdanous.com/"
             }
             
             headers = {"Content-Type": "application/json"}
@@ -3030,8 +2939,8 @@ def setup_first_owner():
         
         # التحقق مما إذا كان الحساب موجوداً بالفعل
         for u in db_data:
-            if str(u.get("username")) == owner_username:
-                return {"message": "حساب المالك موجود بالفعل!"}
+            if str(u.get("username")).strip().lower() == owner_username.lower():
+                return {"message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول مباشرة."}
         
         # تحديد ID جديد
         new_id = max([int(u.get("id", 0)) for u in db_data]) + 1 if db_data else 1
@@ -3040,7 +2949,7 @@ def setup_first_owner():
         new_owner = {
             "id": new_id,
             "username": owner_username,
-            "password": hash_password(owner_password), # تشفير كلمة السر
+            "password": hash_password(owner_password), # استخدام دالة التشفير الموجودة في كودك
             "role": "owner",
             "balance": 1000000.0,
             "rtp": 50,
