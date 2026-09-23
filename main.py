@@ -1432,21 +1432,6 @@ async def logout_owner(request: Request):
     request.session.clear()
     return RedirectResponse(url="/owner-login")
 
-# ==========================================
-# نظام التوجيه الذكي والروابط النظيفة للإدارة
-# ==========================================
-@app.get("/", response_class=HTMLResponse)
-async def admin_home(request: Request):
-    role = request.session.get("role")
-    if role == "owner": return RedirectResponse(url="/panel/owner", status_code=303)
-    elif role == "manager": return RedirectResponse(url="/panel/manager", status_code=303)
-    elif role == "super_admin": return RedirectResponse(url="/panel/super_admin", status_code=303)
-    elif role == "admin": return RedirectResponse(url="/panel/admin", status_code=303)
-    elif role == "shop": return RedirectResponse(url="/panel/shop", status_code=303)
-    
-    
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
 
 @app.post("/login-router")
 @limiter.limit("5/minute")
@@ -3016,3 +3001,47 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
                 
     save_db(db)
     return {"status": "success"}
+import traceback
+from fastapi.responses import HTMLResponse
+import os
+
+
+# 2. مسار إنشاء حساب المالك (مُزود بكاشف أخطاء)
+# ==========================================
+@app.get("/setup-first-owner", response_class=HTMLResponse)
+def setup_first_owner():
+    try:
+        db_data = load_db()
+        owner_username = "fethi"
+        owner_password = "Coutabet2026!"
+        
+        for u in db_data:
+            if str(u.get("username", "")).strip().lower() == owner_username.lower():
+                return HTMLResponse("<h2 style='color:green;'>حساب المالك موجود بالفعل! يمكنك تسجيل الدخول.</h2>")
+                
+        new_id = max([int(u.get("id", 0)) for u in db_data]) + 1 if db_data else 1
+        
+        new_owner = {
+            "id": new_id,
+            "username": owner_username,
+            "password": hash_password(owner_password),
+            "role": "owner",
+            "balance": 1000000.0,
+            "rtp": 50,
+            "is_blocked": 0,
+            "created_by": "system",
+            "last_spin_date": "",
+            "daily_deposits": 0.0,
+            "two_factor_secret": "",
+            "phone": "00000000"
+        }
+        
+        db_data.append(new_owner)
+        save_db(db_data)
+        
+        return HTMLResponse(f"<h2 style='color:green;'>تم إنشاء حساب المالك '{owner_username}' بنجاح!</h2>")
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        return HTMLResponse(f"<h2>حدث خطأ أثناء الاتصال بقاعدة البيانات:</h2><pre style='color:red; background:#111; padding:15px; border-radius:10px; font-size:14px; direction:ltr; text-align:left;'>{error_trace}</pre>")
