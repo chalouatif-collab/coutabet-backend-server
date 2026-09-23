@@ -1395,43 +1395,6 @@ async def launch_casino(request: Request):
         return {"error": str(e)}
 
 
-# ==========================================
-# الجدار الأمني الثاني: حماية لوحة المالك
-# ==========================================
-@app.get("/owner-login", response_class=HTMLResponse)
-async def show_login_page():
-    return """
-    <html>
-        <body style="text-align:center; margin-top:100px; font-family:Arial; background-color:#1e1e2f; color:white;">
-            <h2>تسجيل الدخول للإدارة</h2>
-            <form action="/owner-login" method="post" style="background:#2a2a40; padding:20px; width:300px; margin:auto; border-radius:10px;">
-                <input type="text" name="username" placeholder="اسم المستخدم" required style="width:90%; padding:10px; margin-bottom:15px; border-radius:5px; border:none;"><br>
-                <input type="password" name="password" placeholder="كلمة المرور" required style="width:90%; padding:10px; margin-bottom:15px; border-radius:5px; border:none;"><br>
-                <button type="submit" style="width:95%; padding:10px; background-color:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;">دخول</button>
-            </form>
-        </body>
-    </html>
-    """
-
-@app.post("/owner-login")
-@limiter.limit("5/minute")
-async def process_login(request: Request, username: str = Form(...), password: str = Form(...)):
-    if username == ADMIN_USER and password == ADMIN_PASS:
-        request.session["is_admin"] = True
-        return RedirectResponse(url="/secure-owner", status_code=303)
-    return HTMLResponse("<h3 style='text-align:center; margin-top:100px; color:red;'>بيانات خاطئة!</h3><div style='text-align:center;'><a href='/owner-login'>العودة للمحاولة</a></div>")
-
-@app.get("/secure-owner")
-async def open_owner_panel(request: Request):
-    if not request.session.get("is_admin"):
-        return RedirectResponse(url="/owner-login")
-    return FileResponse("owner.html")
-
-@app.get("/owner-logout")
-async def logout_owner(request: Request):
-    request.session.clear()
-    return RedirectResponse(url="/owner-login")
-
 
 @app.post("/login-router")
 @limiter.limit("5/minute")
