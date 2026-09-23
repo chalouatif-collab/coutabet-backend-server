@@ -3018,40 +3018,43 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
     return {"status": "success"}
 
 # ==========================================
-# مسار مؤقت لإنشاء حساب المالك (Owner)
+# مسار مؤقت لإنشاء حساب المالك (Owner) في Firebase
 # ==========================================
-@app.get("/api/setup-first-owner")
+@app.get("/setup-first-owner")
 def setup_first_owner():
-    from passlib.context import CryptContext
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
-    owner_username = "fethi"
-    owner_password = "Coutabet2026!"
-    
-    db_session = SessionLocal()
     try:
+        # جلب البيانات من Firebase
+        db_data = load_db()
+        owner_username = "fethi"
+        owner_password = "Coutabet2026!"
+        
         # التحقق مما إذا كان الحساب موجوداً بالفعل
-        existing_user = db_session.query(User).filter(User.username == owner_username).first()
-        if existing_user:
-            return {"message": "حساب المالك موجود بالفعل!"}
+        for u in db_data:
+            if str(u.get("username")) == owner_username:
+                return {"message": "حساب المالك موجود بالفعل!"}
         
-        # إنشاء الحساب
-        new_owner = User(
-            username=owner_username,
-            password=pwd_context.hash(owner_password),
-            role="owner",
-            balance=1000000.0,
-            rtp=50,
-            is_blocked=0,
-            created_by="system",
-            phone="00000000"
-        )
+        # تحديد ID جديد
+        new_id = max([int(u.get("id", 0)) for u in db_data]) + 1 if db_data else 1
         
-        db_session.add(new_owner)
-        db_session.commit()
-        return {"message": f"تم إنشاء حساب المالك بنجاح! اسم المستخدم: {owner_username}"}
+        # إنشاء الحساب الجديد
+        new_owner = {
+            "id": new_id,
+            "username": owner_username,
+            "password": hash_password(owner_password), # تشفير كلمة السر
+            "role": "owner",
+            "balance": 1000000.0,
+            "rtp": 50,
+            "is_blocked": 0,
+            "created_by": "system",
+            "last_spin_date": "",
+            "daily_deposits": 0.0,
+            "two_factor_secret": "",
+            "phone": "00000000"
+        }
+        
+        db_data.append(new_owner)
+        save_db(db_data) # الحفظ في Firebase
+        
+        return {"message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح! يمكنك الآن تسجيل الدخول."}
     except Exception as e:
-        db_session.rollback()
-        return {"error": str(e)}
-    finally:
-        db_session.close()
+        return {"error": f"حدث خطأ أثناء الإنشاء: {str(e)}"}
