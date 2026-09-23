@@ -66,7 +66,7 @@ ADMIN_USER = os.getenv("ADMIN_USERNAME")
 ADMIN_PASS = os.getenv("ADMIN_PASSWORD")
 SECRET_KEY = os.getenv("SECRET_KEY", "alpha-secure-key-2026")
 
-# 1. إعداد الاتصال بـ Firebase (مُحصن ضد الانهيار)
+# 1. إعداد الاتصال بـ Firebase
 try:
     if not firebase_admin._apps:
         if os.path.exists("firebase-key.json"):
@@ -75,9 +75,9 @@ try:
                 'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
             })
         else:
-            print("⚠️ تحذير: ملف firebase-key.json مفقود! السيرفر سيعمل ولكن قاعدة البيانات السحابية لن تتصل.")
+            print("⚠️ تحذير: ملف firebase-key.json مفقود، السيرفر يعمل بدون السحابة حالياً.")
 except Exception as e:
-    print(f"❌ خطأ في تهيئة Firebase: {e}")
+    print(f"❌ خطأ: {e}")
     
 # 2. دالة جلب البيانات من السحابة
 def load_db():
@@ -838,23 +838,6 @@ async def fix_missing_user_ids(current_user: str = Depends(get_admin_user)):
         return {"status": "success", "message": f"عملية ناجحة! تم منح ID جديد لـ {updated_count} حساب/حسابات قديمة."}
     except Exception as e:
         return {"status": "error", "message": f"حدث خطأ: {str(e)}"}
-
-class HandleHugeWinRequest(BaseModel):
-    tx_id: int
-    decision: str 
-
-@app.get("/api/admin/pending-huge-wins")
-async def get_pending_huge_wins(current_user: str = Depends(get_admin_user)):
-    db_session = SessionLocal()
-    try:
-        txs = db_session.query(Transaction).filter(Transaction.admin_username == "PENDING_HUGE_WIN").order_by(Transaction.id.desc()).all()
-        return [{"id": t.id, "target_username": t.target_username, "amount": float(t.amount), "action": t.action, "date": t.date} for t in txs]
-    except Exception as e:
-        print(f"Error fetching huge wins: {e}")
-        return []
-    finally:
-        db_session.close()
-
 
 @app.get("/api/admin/users")
 async def get_all_network_users(current_user: str = Depends(get_admin_user)): 
@@ -2413,47 +2396,7 @@ async def launch_sportsbook(request: Request):
                 except Exception as e:
                     return {"status": "error", "details": str(e)}
                 
-class HandleHugeWinRequest(BaseModel):
-    tx_id: int
-    decision: str # 'approve' or 'reject'
 
-@app.get("/api/admin/pending-huge-wins")
-async def get_pending_huge_wins(current_user: str = Depends(get_admin_user)):
-    db_session = SessionLocal()
-    try:
-        txs = db_session.query(Transaction).filter(Transaction.admin_username == "PENDING_HUGE_WIN").all()
-        return [{"id": t.id, "target_username": t.target_username, "amount": float(t.amount), "action": t.action, "date": t.date} for t in txs]
-    finally:
-        db_session.close()
-
-@app.post("/api/admin/handle-huge-win")
-async def handle_huge_win(req: HandleHugeWinRequest, current_user: str = Depends(get_admin_user)):
-    # حماية إضافية: الأونر أو السوبر أدمن فقط من يوافق
-    db = load_db()
-    admin = next((u for u in db if u["username"] == current_user), None)
-    if not admin or admin.get("role") not in ["owner", "super_admin"]:
-        raise HTTPException(status_code=403, detail="صلاحية الأونر مطلوبة")
-
-    db_session = SessionLocal()
-    try:
-        tx = db_session.query(Transaction).filter(Transaction.id == req.tx_id).first()
-        if not tx or tx.admin_username != "PENDING_HUGE_WIN":
-            return JSONResponse(status_code=404, content={"detail": "الطلب غير موجود أو تمت معالجته"})
-
-        if req.decision == "approve":
-            async with db_lock:
-                target_user = next((u for u in db if str(u["username"]).lower() == str(tx.target_username).lower()), None)
-                if target_user:
-                    target_user["balance"] = round(float(target_user.get("balance", 0)) + tx.amount, 2)
-                    save_db(db)
-            tx.admin_username = f"APPROVED_BY_{current_user.upper()}"
-        else:
-            tx.admin_username = f"REJECTED_BY_{current_user.upper()}"
-
-        db_session.commit()
-        return {"status": "success", "message": "تمت معالجة الربح الضخم بنجاح"}
-    finally:
-        db_session.close()           
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import uuid
