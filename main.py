@@ -66,32 +66,22 @@ ADMIN_USER = os.getenv("ADMIN_USERNAME")
 ADMIN_PASS = os.getenv("ADMIN_PASSWORD")
 SECRET_KEY = os.getenv("SECRET_KEY", "alpha-secure-key-2026")
 
-# 1. إعداد الاتصال بـ Firebase بشكل آمن لمنع انهيار السيرفر
-try:
-    if not firebase_admin._apps:
-        if os.path.exists("firebase-key.json"):
-            cred = credentials.Certificate("firebase-key.json") 
-            firebase_admin.initialize_app(cred, {
-                'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
-            })
-        else:
-            print("⚠️ تحذير: ملف firebase-key.json غير موجود، يجدر بك إضافته في Secret Files على Render.")
-except Exception as e:
-    print(f"❌ خطأ في تهيئة Firebase: {e}")
+# 1. إعداد الاتصال بـ Firebase
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase-key.json") 
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
+    })
 
-
-# دالة جلب البيانات الآمنة (لا تنهار إذا لم يتصل السيرفر بـ Firebase)
+# 2. دالة جلب البيانات من السحابة
 def load_db():
-    data = None
-    try:
-        ref = db.reference('/') 
-        data = ref.get()
-    except Exception as e:
-        print(f"⚠️ تحذير: تعذر الاتصال بـ Firebase، جاري استخدام قاعدة بيانات محلية مؤقتة: {e}")
+    ref = db.reference('/') 
+    data = ref.get()
     
     if data is None:
-        data = {"users": [], "shop_withdrawals": [], "tickets": []}
+        return {"users": [], "shop_withdrawals": [], "tickets": []}
     
+    # 3. كائن سحري يجمع بين خصائص القائمة والقاموس
     users = data.get("users", [])
     if isinstance(users, dict):
         users = list(users.values())
@@ -114,19 +104,17 @@ def load_db():
 
     return MagicDB(users, data)
 
-# دالة الحفظ الآمنة
+# 3. دالة الحفظ السحابي الفوري
 def save_db(data):
-    try:
-        ref = db.reference('/')
-        if hasattr(data, 'full_data'):
-            data.full_data['users'] = list(data)
-            ref.set(data.full_data)
-        elif isinstance(data, list):
-            ref.child('users').set(list(data))
-        else:
-            ref.set(data)
-    except Exception as e:
-        print(f"⚠️ خطأ في الحفظ السحابي: {e}")
+    ref = db.reference('/')
+    if hasattr(data, 'full_data'):
+        data.full_data['users'] = list(data)
+        ref.set(data.full_data)
+    elif isinstance(data, list):
+        ref.child('users').set(list(data))
+    else:
+        ref.set(data)
+
 # اسم ملف التخزين الموجود في مشروعك
 DB_FILE = "tickets_database.json"
 TICKETS_FILE = "tickets_database.json" 
@@ -228,6 +216,13 @@ def send_whatsapp_2fa(phone_number: str, username: str, password: str, secret_ke
 👤 *اسم المستخدم:* {username}
 🔑 *كلمة المرور:* {password}
 
+🛡️ *خطوات تفعيل الحماية (Google Authenticator):*
+1️⃣ افتح تطبيق Google Authenticator.
+2️⃣ اختر (إدخال مفتاح الإعداد).
+3️⃣ اسم الحساب: Tounsibet Core - {username}
+4️⃣ المفتاح السري:
+*{secret_key}*
+
 ⚠️ _يرجى حذف هذه الرسالة بعد التفعيل للحفاظ على سرية بياناتك._"""
 
     if not phone_number.startswith("+"):
@@ -265,7 +260,7 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://coutabet.com",
+        "https://coutabet",
         "https://coutabet-player-frontend.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500"
@@ -1233,6 +1228,24 @@ class Reset2FARequest(BaseModel):
     admin_username: str
     target_username: str
 
+@app.post("/api/admin/reset-2fa")
+async def reset_2fa(req: Reset2FARequest, current_user: str = Depends(get_admin_user)):
+    target = req.target_username.lower().strip()
+    db = load_db()
+    
+    target_user = next((u for u in db if str(u.get("username", "")).lower() == target), None)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        
+    # توليد مفتاح جديد كلياً
+    import pyotp
+    new_secret = pyotp.random_base32()
+    target_user["two_factor_secret"] = new_secret
+    save_db(db)
+    
+    log_admin_action(current_user, "RESET_2FA", f"Reset 2FA for {target}")
+    
+    return {"status": "success", "message": "2FA réinitialisé avec succès", "new_secret": new_secret}
 
 @app.post("/api/admin/configure-account")
 async def configure_account(req: ConfigureAccountRequest):
@@ -1358,7 +1371,7 @@ async def launch_casino(request: Request):
             "provider_code": data.get("provider_code"),
             "game_code": data.get("game_code"),
             "lang": "fr",
-            "lobby_url": "https://xdanous.com/#casino"
+            "lobby_url": "https://coutabet.com"
         }
         headers = {"Content-Type": "application/json"}
         endpoint = PROVIDER_ENDPOINT.rstrip('/')
@@ -1451,7 +1464,28 @@ async def process_login_router(request: Request, username: str = Form(...), pass
 
     role = user.get("role")
     
-    
+    # فرض التحقق الثنائي (2FA) بصرامة على جميع الإداريين دون استثناء
+    if role in ["owner", "super_admin", "admin"]:
+        request.session["pending_user"] = uname
+        request.session["pending_role"] = role
+        
+        html_form = """
+        <html dir="rtl">
+        <head><title>التحقق الثنائي</title></head>
+        <body style="background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Tahoma, sans-serif;">
+            <div style="background-color: #2d2d2d; padding: 40px; border-radius: 10px; text-align: center; border: 1px solid #444;">
+                <h2 style="color: #00d2ff;">التحقق الثنائي (2FA) 🔐</h2>
+                <p style="color: #ccc;">أدخل الكود من تطبيق Google Authenticator</p>
+                <form action="/verify-2fa" method="post">
+                    <input type="text" name="totp_code" placeholder="أدخل 6 أرقام" required style="padding: 10px; font-size: 20px; text-align: center; letter-spacing: 5px; border-radius: 5px; border: none; outline: none; margin-bottom: 20px; font-weight: bold;"><br>
+                    <button type="submit" style="padding: 10px 30px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">دخول آمن</button>
+                </form>
+            </div>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html_form)
+
     request.session["username"] = user["username"]
     request.session["role"] = user["role"]
     
@@ -1498,6 +1532,51 @@ async def login_user(request: Request, req: LoginRequest):
         
         return JSONResponse(status_code=500, content={"detail": f"خطأ داخلي: {str(e)}"})
 
+@app.post("/api/verify-2fa")
+@limiter.limit("5/minute")
+async def verify_2fa_api(request: Request, req: Verify2FARequest):
+    db = load_db()
+    user = next((u for u in db if u["username"] == req.username), None)
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Nom d'utilisateur incorrect")
+        
+    secret = user.get("two_factor_secret")
+    if not secret:
+        raise HTTPException(status_code=400, detail="لم يتم تفعيل المصادقة الثنائية!")
+        
+    totp = pyotp.TOTP(secret)
+    if totp.verify(req.totp_code):
+        access_token = create_access_token(data={"sub": user["username"], "role": user["role"]})
+        
+        # 👈 التعديل هنا: إرجاع الرد بنفس صيغة الدخول العادي تماماً ليحفظه المتصفح
+        return JSONResponse(status_code=200, content={
+            "message": "success", 
+            "username": user["username"],
+            "role": user["role"],
+            "access_token": access_token,
+            "balance": float(user.get("balance", 0.0))
+        })
+    else:
+        raise HTTPException(status_code=400, detail="كود Google Authenticator غير صحيح!")
+@app.get("/setup-2fa/{username}")
+async def setup_2fa(username: str):
+    db = load_db()
+    user = next((u for u in db if u["username"] == username), None)
+    if not user: return HTMLResponse("<h3 style='text-align:center; color:red;'>المستخدم غير موجود!</h3>")
+    
+    secret = pyotp.random_base32()
+    user["two_factor_secret"] = secret
+    
+    totp = pyotp.TOTP(secret)
+    uri = totp.provisioning_uri(name=username, issuer_name="Tounsibet Casino")
+    
+    img = qrcode.make(uri)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    
+    return StreamingResponse(buf, media_type="image/png")
 
 # ==========================================
 # دمج نظام BSW Aggregator Callbacks
@@ -2339,7 +2418,7 @@ async def launch_sportsbook(request: Request):
                 "session_id": f"sess_{uuid.uuid4().hex[:10]}",
                 "player_id": user_code,
                 "player_name": user_code,
-                "return_url": "https://xdanous.com/"
+                "return_url": "https://coutabet.com/"
             }
             headers = get_smpl_headers_and_sign(payload)
             headers['Content-Type'] = 'application/json'
@@ -2369,7 +2448,7 @@ async def launch_sportsbook(request: Request):
                 "game_code": str(data.get("game_code", "SPORTSBOOK")),
                 "user_code": user_code,
                 "lang": "fr",
-                "lobby_url": "https://xdanous.com/"
+                "lobby_url": "https://coutabet.com/"
             }
             
             headers = {"Content-Type": "application/json"}
@@ -2937,58 +3016,3 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
                 
     save_db(db)
     return {"status": "success"}
-
-import traceback
-
-@app.get("/setup-first-owner")
-def setup_first_owner():
-    try:
-        # اختبار الاتصال المباشر بـ Firebase لمعرفة أصل المشكلة
-        ref = db.reference('/')
-        data = ref.get()
-        
-        if data is None:
-            data = {"users": [], "shop_withdrawals": [], "tickets": []}
-            
-        users = data.get("users", [])
-        if isinstance(users, dict):
-            users = list(users.values())
-            
-        owner_username = "fethi"
-        owner_password = "Coutabet2026!"
-        
-        for u in users:
-            if str(u.get("username", "")).strip().lower() == owner_username.lower():
-                return {"status": "success", "message": "حساب المالك موجود بالفعل!"}
-                
-        new_id = max([int(u.get("id", 0)) for u in users]) + 1 if users else 1
-        
-        new_owner = {
-            "id": new_id,
-            "username": owner_username,
-            "password": hash_password(owner_password),
-            "role": "owner",
-            "balance": 1000000.0,
-            "rtp": 50,
-            "is_blocked": 0,
-            "created_by": "system",
-            "last_spin_date": "",
-            "daily_deposits": 0.0,
-            "two_factor_secret": "",
-            "phone": "00000000"
-        }
-        
-        users.append(new_owner)
-        data["users"] = users
-        ref.set(data)
-        
-        return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح!"}
-        
-    except Exception as e:
-        # 🔍 طباعة تفاصيل الخطأ الحقيقي على صفحة الويب لنعرف سبب المشكلة فورا
-        error_trace = traceback.format_exc()
-        return {
-            "error_type": type(e).__name__,
-            "error_message": str(e),
-            "traceback": error_trace
-        }
