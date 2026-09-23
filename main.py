@@ -66,22 +66,32 @@ ADMIN_USER = os.getenv("ADMIN_USERNAME")
 ADMIN_PASS = os.getenv("ADMIN_PASSWORD")
 SECRET_KEY = os.getenv("SECRET_KEY", "alpha-secure-key-2026")
 
-# 1. إعداد الاتصال بـ Firebase
-if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase-key.json") 
-    firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
-    })
+# 1. إعداد الاتصال بـ Firebase بشكل آمن لمنع انهيار السيرفر
+try:
+    if not firebase_admin._apps:
+        if os.path.exists("firebase-key.json"):
+            cred = credentials.Certificate("firebase-key.json") 
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
+            })
+        else:
+            print("⚠️ تحذير: ملف firebase-key.json غير موجود، يجدر بك إضافته في Secret Files على Render.")
+except Exception as e:
+    print(f"❌ خطأ في تهيئة Firebase: {e}")
 
-# 2. دالة جلب البيانات من السحابة
+
+# دالة جلب البيانات الآمنة (لا تنهار إذا لم يتصل السيرفر بـ Firebase)
 def load_db():
-    ref = db.reference('/') 
-    data = ref.get()
+    data = None
+    try:
+        ref = db.reference('/') 
+        data = ref.get()
+    except Exception as e:
+        print(f"⚠️ تحذير: تعذر الاتصال بـ Firebase، جاري استخدام قاعدة بيانات محلية مؤقتة: {e}")
     
     if data is None:
-        return {"users": [], "shop_withdrawals": [], "tickets": []}
+        data = {"users": [], "shop_withdrawals": [], "tickets": []}
     
-    # 3. كائن سحري يجمع بين خصائص القائمة والقاموس
     users = data.get("users", [])
     if isinstance(users, dict):
         users = list(users.values())
@@ -104,17 +114,19 @@ def load_db():
 
     return MagicDB(users, data)
 
-# 3. دالة الحفظ السحابي الفوري
+# دالة الحفظ الآمنة
 def save_db(data):
-    ref = db.reference('/')
-    if hasattr(data, 'full_data'):
-        data.full_data['users'] = list(data)
-        ref.set(data.full_data)
-    elif isinstance(data, list):
-        ref.child('users').set(list(data))
-    else:
-        ref.set(data)
-
+    try:
+        ref = db.reference('/')
+        if hasattr(data, 'full_data'):
+            data.full_data['users'] = list(data)
+            ref.set(data.full_data)
+        elif isinstance(data, list):
+            ref.child('users').set(list(data))
+        else:
+            ref.set(data)
+    except Exception as e:
+        print(f"⚠️ خطأ في الحفظ السحابي: {e}")
 # اسم ملف التخزين الموجود في مشروعك
 DB_FILE = "tickets_database.json"
 TICKETS_FILE = "tickets_database.json" 
