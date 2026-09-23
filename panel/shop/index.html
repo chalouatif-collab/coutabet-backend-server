@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALPHA SHOP - لوحة تحكم المحل المعتمد</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* الألوان المخصصة - التركيز على الأخضر */
+        :root {
+            --emerald-primary: #10b981;
+            --emerald-hover: #059669;
+            --bg-main: #060913;
+            --bg-sidebar: #090d1a;
+            --bg-card: #0b101f;
+            --bg-input: #0f172a; /* تم تفتيح لون الخانات لتوضيح الكتابة */
+            --border-dark: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: #e2e8f0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        /* تنسيقات مخصصة */
+        .bg-card-custom { background-color: var(--bg-card); }
+        .bg-input-custom { background-color: var(--bg-input); }
+        .border-custom { border: 1px solid var(--border-dark); }
+        .text-emerald { color: var(--emerald-primary) !important; }
+        
+        /* الأزرار الخضراء */
+        .btn-emerald {
+            background-color: var(--emerald-primary);
+            color: #060913;
+            font-weight: 900;
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-emerald:hover {
+            background-color: var(--emerald-hover);
+            color: #060913;
+            transform: translateY(-1px);
+        }
+
+        /* حقول الإدخال - تم تحسين ألوانها لتكون أوضح */
+        .form-control, .form-select {
+            background-color: var(--bg-input) !important;
+            border: 1px solid #334155 !important;
+            color: #ffffff !important; /* لون الكتابة ناصع */
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .form-control::placeholder {
+            color: #64748b !important; /* لون النص الإرشادي */
+            font-weight: normal;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #1e293b !important;
+            border-color: var(--emerald-primary) !important;
+            box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25) !important;
+        }
+
+        /* القائمة الجانبية */
+        .sidebar-link {
+            color: #cbd5e1;
+            background-color: rgba(11, 16, 31, 0.6);
+            border: 1px solid rgba(30, 41, 59, 0.6);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+        .sidebar-link:hover {
+            background-color: #1e293b;
+            color: #fff;
+        }
+        .active-shop-btn {
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            border-color: var(--emerald-primary) !important;
+            color: var(--emerald-primary) !important;
+        }
+
+        /* إخفاء شريط التمرير */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .offcanvas { background-color: var(--bg-sidebar); border-right: 1px solid var(--border-dark); }
+        /* إصلاح مشكلة الملء التلقائي في المتصفحات (Autofill) للوحة Shop */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, 
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+    </style>
+</head>
+    <body class="d-flex flex-column flex-md-row min-vh-100"></body>
+
+    <!-- حاوية الإشعارات -->
+    <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; width: 100%; max-width: 400px;"></div>
+
+    <!-- القائمة الجانبية (للكمبيوتر) -->
+    <aside class="d-none d-md-flex flex-column justify-content-between p-4" style="width: 280px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-dark);">
+        <div class="d-flex flex-column gap-4">
+            <div class="bg-card-custom border-custom rounded-3 p-2 d-flex align-items-center justify-content-between">
+                <span class="small fw-bold text-secondary">🌐 Langue:</span>
+                <select id="shop-lang-select" onchange="changeShopLanguage(this.value)" class="form-select form-select-sm w-auto border-0 shadow-none cursor-pointer">
+                    <option value="fr">Français</option>
+                    <option value="ar">العربية</option>
+                </select>
+            </div>
+
+            <div>
+                <p class="text-secondary fw-black small mb-3 text-uppercase" style="letter-spacing: 2px;">MENU DE GESTION</p>
+                <nav id="shop-sidebar-nav" class="d-flex flex-column">
+                    <button onclick="switchShopPanelSection('compte')" id="btn-shop-compte" class="sidebar-link active-shop-btn">
+                        👤 Gestion des Joueurs
+                    </button>
+                    <button onclick="switchShopPanelSection('transfert')" id="btn-shop-transfert" class="sidebar-link">
+                        💸 Historique de Transfert
+                    </button>
+                    <button onclick="switchShopPanelSection('casino')" id="btn-shop-casino" class="sidebar-link">
+                        🎰 Historique de Casino
+                    </button>
+                    <button onclick="switchShopPanelSection('sport')" id="btn-shop-sport" class="sidebar-link">
+                        ⚽ Tickets de Sport
+                    </button>
+                    <button onclick="switchShopPanelSection('security')" id="btn-shop-security" class="sidebar-link">
+                        🔑 Sécurité du magasin
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <div class="pt-3 border-top border-custom mt-auto">
+            <button onclick="logoutShop()" class="btn w-100 fw-bold d-flex align-items-center justify-content-center gap-2" style="background-color: rgba(225, 29, 72, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185;">
+                🚪 Déconnexion
+            </button>
+        </div>
+    </aside>
+
+    <!-- القائمة الجانبية (للهاتف - Offcanvas) -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar">
+        <div class="offcanvas-header border-bottom border-custom">
+            <h5 class="offcanvas-title text-white fw-bold">Menu Boutique</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column justify-content-between p-4">
+            <div class="d-flex flex-column gap-4">
+                <nav id="shop-sidebar-nav-mobile" class="d-flex flex-column">
+                    <button onclick="switchShopPanelSection('compte'); bootstrap.Offcanvas.getInstance(document.getElementById('mobileSidebar')).hide();" class="sidebar-link active-shop-btn">👤 Gestion des Joueurs</button>
+                    <button onclick="switchShopPanelSection('transfert'); bootstrap.Offcanvas.getInstance(document.getElementById('mobileSidebar')).hide();" class="sidebar-link">💸 Historique de Transfert</button>
+                    <button onclick="switchShopPanelSection('casino'); bootstrap.Offcanvas.getInstance(document.getElementById('mobileSidebar')).hide();" class="sidebar-link">🎰 Historique de Casino</button>
+                    <button onclick="switchShopPanelSection('sport'); bootstrap.Offcanvas.getInstance(document.getElementById('mobileSidebar')).hide();" class="sidebar-link">⚽ Tickets de Sport</button>
+                    <button onclick="switchShopPanelSection('security'); bootstrap.Offcanvas.getInstance(document.getElementById('mobileSidebar')).hide();" class="sidebar-link">🔑 Sécurité du magasin</button>
+                </nav>
+            </div>
+            <div class="pt-3 border-top border-custom mt-auto">
+                <button onclick="logoutShop()" class="btn w-100 fw-bold" style="background-color: rgba(225, 29, 72, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185;">🚪 Déconnexion</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- منطقة المحتوى الرئيسية -->
+    <div class="flex-grow-1 d-flex flex-column  position-relative">
+        
+        <!-- الهيدر العلوي - تم تصغيره بشكل كبير -->
+<header class="bg-card-custom border-bottom border-custom px-3 py-2 d-flex justify-content-between align-items-center shadow-sm flex-shrink-0">
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary d-md-none border-0 text-white px-2 py-1 fs-4" type="button" 
+        data-bs-toggle="offcanvas" 
+        data-bs-target="#mobileSidebar" 
+        aria-controls="mobileSidebar">
+            ☰
+        </button>
+        <span class="badge text-emerald fw-bold px-2 py-1 border rounded-2" style="background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); font-size: 0.65rem;" id="shop-username-display">Boutique: Connected</span>
+    </div>
+    <div class="border-custom px-2 py-1 rounded-2 d-flex align-items-center gap-2" style="background-color: #04060c;">
+        <span class="text-secondary font-sans" style="font-size: 0.65rem;">Crédit:</span>
+        <span class="text-emerald fw-black font-monospace" style="font-size: 0.75rem;" id="shop-balance-val">0.00 TND</span>
+    </div>
+</header>
+
+        <!-- مساحة العمل -->
+        <main class="flex-grow-1 overflow-y-auto p-2 p-md-4 no-scrollbar">
+
+            <!-- قسم إدارة اللاعبين -->
+            <div id="panel-shop-compte" class="shop-main-view d-flex flex-column gap-3">
+                
+                <!-- حقل البحث -->
+                <div class="p-2 bg-card-custom rounded-3 border border-custom shadow-sm">
+                    <input type="text" id="search-input" oninput="renderFilteredUsers()" placeholder="🔍  Chercher un utilisateur..." class="form-control form-control-sm rounded-2">
+                </div>
+                
+                <!-- إنشاء حساب جديد -->
+                <section class="bg-card-custom border-custom rounded-3 p-3 shadow-sm">
+                    <h5 class="fw-bold text-light mb-2" style="font-size: 0.8rem;">🕹️ Créé un nouveau Compte</h5>
+                    <div class="row g-2 mb-2">
+                        <div class="col-12 col-sm-6">
+                            <input type="text" id="new-user-name" placeholder="Nom du joueur" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <input type="password" id="player-password" placeholder="Mot de passe" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                    <button onclick="createPlayerAccount()" class="btn btn-emerald btn-sm w-100 py-1 rounded-2 shadow-sm" style="font-size: 0.75rem;">Créé </button>
+                </section>
+
+                <!-- إدارة الأموال والعمليات -->
+                <section class="bg-card-custom border-custom rounded-3 overflow-hidden shadow-sm">
+                    <div class="p-2 border-bottom border-custom" style="background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);">
+                        <h5 class="fw-bold text-white mb-2" style="font-size: 0.75rem;">📋 Dépôt/Retrait </h5>
+                        
+                        <!-- شريط التحكم المالي -->
+                        <div class="d-flex flex-wrap gap-2 align-items-center p-2 rounded-2 border border-custom" style="background-color: #04060c;">
+                            <div class="d-flex align-items-center gap-1">
+                                <input type="text" id="target-player-name" placeholder="sélectionner un compte" class="form-control form-control-sm text-warning" style="width: 80px; font-size: 0.7rem;" readonly>
+                            </div>
+                            
+                            <div class="vr bg-secondary mx-1 d-none d-sm-block"></div>
+                            
+                            <div class="d-flex align-items-center gap-1">
+                                <input type="number" id="finance-amount" placeholder="Montant" class="form-control form-control-sm text-emerald" style="width: 70px; font-size: 0.7rem;">
+                                <button onclick="executeShopFinance('charge')" class="btn btn-emerald btn-sm fw-bold px-2 py-1" style="font-size: 0.65rem;">Dépôt</button>
+                                <button onclick="executeShopFinance('withdraw')" class="btn btn-danger btn-sm fw-bold px-2 py-1" style="font-size: 0.65rem;">Retrait</button>
+                            </div>
+
+                            <div class="vr bg-secondary mx-1 d-none d-lg-block"></div>
+                            
+                            <div class="d-flex align-items-center gap-1 ms-auto mt-1 mt-lg-0 w-100 w-lg-auto">
+                                <input type="password" id="shop-player-new-pass" placeholder="Nouveau mot de passe" class="form-control form-control-sm flex-grow-1" style="font-size: 0.7rem;">
+                                <button onclick="changePlayerPasswordFromShop()" class="btn btn-info btn-sm text-white fw-bold px-2 py-1" style="font-size: 0.65rem;">Change</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- قائمة اللاعبين - تم تصغيرها بشكل كبير -->
+                    <div class="p-2" id="players-table-body">
+                        <!-- سيتم عرض بطاقات اللاعبين هنا بواسطة JS -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- أقسام أخرى مخفية افتراضياً -->
+            <div id="panel-shop-transfert" class="shop-main-view d-none">
+                <p class="text-secondary small fw-bold text-uppercase mb-3">💸 Historique des Transferts et Transactions :</p>
+                <div class="bg-card-custom border-custom rounded-3 p-4 text-center text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">
+                    Aucune transaction enregistrée pour le moment.
+                </div>
+            </div>
+
+            <div id="panel-shop-casino" class="shop-main-view d-none">
+                <p class="text-secondary small fw-bold text-uppercase mb-3">🎰 Historique des Sessions Casino (Hub88 API) :</p>
+                <div class="bg-card-custom border-custom rounded-3 p-4 text-center text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">
+                    Logs Hub88 synchronisés. Aucun pari de casino trouvé pour vos joueurs.
+                </div>
+            </div>
+
+            <div id="panel-shop-sport" class="shop-main-view d-none">
+                <p class="text-secondary small fw-bold text-uppercase mb-3">⚽ Tickets de sport actifs de vos joueurs :</p>
+                <div id="shop-sport-container">
+                    <div class="bg-card-custom border-custom rounded-3 p-4 text-center text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Aucun ticket en attente</div>
+                </div>
+            </div>
+
+            <div id="panel-shop-security" class="shop-main-view d-none" style="max-width: 500px; margin: 0 auto;">
+                <div class="bg-card-custom border-custom p-3 rounded-3 shadow-sm">
+                    <h5 class="fw-bold text-warning text-uppercase mb-3" style="font-size: 0.8rem;">🔑 Modifier le mot de passe Boutique</h5>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-bold" style="font-size: 0.7rem;">Nouveau mot de passe</label>
+                        <input type="password" id="shop-new-pass" placeholder="••••••••" class="form-control form-control-sm">
+                    </div>
+                    <button onclick="updateShopPassword()" class="btn btn-emerald w-100 py-1 rounded-2" style="font-size: 0.8rem;">Mettre à jour</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.toString().replace(/[&<>'"]/g,
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+        const BACKEND_URL = "https://alpha-backend-server.onrender.com";
+        let shopSessionUser = { username: "shop_test", balance: 0.00 };
+        let createdPlayersList = [];
+        let allUsers = []; 
+       
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('alpha_user') || '{}');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? '✅' : '❌';
+            
+            toast.className = `toast align-items-center text-bg-dark border-0 mb-2 show shadow-lg`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex ${type === 'success' ? 'border-success' : 'border-danger'} border-start border-4 rounded" style="background-color: var(--bg-card);">
+                    <div class="toast-body fw-bold d-flex gap-2" style="font-size: 0.75rem;">
+                        <span>${icon}</span> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        function switchShopPanelSection(sectionId) {
+            document.querySelectorAll('.shop-main-view').forEach(el => {
+                el.classList.add('d-none');
+                el.classList.remove('d-flex');
+            });
+            
+            document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active-shop-btn'));
+            
+            const targetSection = document.getElementById(`panel-shop-${sectionId}`);
+            if (targetSection) {
+                targetSection.classList.remove('d-none');
+                if(sectionId === 'compte') targetSection.classList.add('d-flex');
+            }
+            
+            document.querySelectorAll(`[onclick*="switchShopPanelSection('${sectionId}')"]`).forEach(btn => btn.classList.add('active-shop-btn'));
+
+            // تشغيل دوال الجلب الديناميكية عند الدخول للقسم
+            if (sectionId === 'transfert') fetchShopTransactions();
+            if (sectionId === 'casino') fetchShopCasinoHistory();
+            if (sectionId === 'sport') fetchShopSportTickets();
+        }
+
+        async function loadShopPlayersData() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/users`, {
+                 method: 'GET',
+                 headers: getAuthHeaders()
+            });
+                if(res.ok) {
+                    allUsers = await res.json();
+                    createdPlayersList = allUsers.filter(u => u.created_by === shopSessionUser.username);
+                    renderFilteredUsers(); 
+                    
+                    const me = allUsers.find(u => u.username === shopSessionUser.username);
+                    if(me) {
+                        shopSessionUser.balance = me.balance;
+                        document.getElementById('shop-balance-val').innerText = `${parseFloat(shopSessionUser.balance).toFixed(2)} TND`;
+                        localStorage.setItem('alpha_user', JSON.stringify(shopSessionUser));
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+      async function createPlayerAccount() {
+            const usernameInput = document.getElementById('new-user-name');
+            const passwordInput = document.getElementById('player-password');
+
+            const username = usernameInput ? usernameInput.value.trim().toLowerCase() : '';
+            const password = passwordInput ? passwordInput.value : '';
+
+            if(!username || !password) {
+                showNotification('Remplir tous les champs!', 'error');
+                return;
+            }
+
+            // جلب اسم الشوب الحالي من التخزين المحلي
+            const sessionData = localStorage.getItem('alpha_user');
+            const currentUser = sessionData ? JSON.parse(sessionData) : null;
+            const creatorUsername = currentUser ? currentUser.username : 'shop_admin';
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/register`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ 
+                        username: username, 
+                        password: password, 
+                        role: 'player', 
+                        created_by: creatorUsername,
+                        phone: "00000000" // إضافة حقل الهاتف المطلوب لكي يوافق السيرفر
+                    })
+                });
+                
+                const data = await res.json(); 
+
+                if(res.ok){
+                    showNotification('Compte créé avec succès!', 'success');
+                    usernameInput.value = '';
+                    passwordInput.value = '';
+                    await loadShopPlayersData();
+                } else {
+                    showNotification(data.detail || 'Erreur lors de la création', 'error');
+                }
+            } catch(e) {
+                console.error("خطأ الاتصال تفصيلي:", e);
+                showNotification('Erreur de connexion avec le serveur', 'error');
+            }
+        }
+
+        async function changePlayerPasswordFromShop() {
+            const targetPlayer = document.getElementById('target-player-name').value.trim().toLowerCase();
+            const newPassword = document.getElementById('shop-player-new-pass').value;
+            
+            if(!targetPlayer) return showNotification('الرجاء اختيار لاعب أولاً من الجدول أسفله', 'error');
+            if(!newPassword || newPassword.length < 4) return showNotification('كلمة المرور قصيرة جداً (مطلوب 4 رموز على الأقل)', 'error');
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/change-player-password`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        admin_username: shopSessionUser.username,
+                        target_username: targetPlayer,
+                        new_password: newPassword
+                    })
+                });
+                if(res.ok) {
+                    showNotification(`تم تحديث كلمة مرور اللاعب [ ${targetPlayer} ] بنجاح!`);
+                    document.getElementById('shop-player-new-pass').value = '';
+                    document.getElementById('target-player-name').value = '';
+                } else {
+                    showNotification('فشلت عملية التعديل، تأكد من اتصال الخادم', 'error');
+                }
+            } catch(e) { showNotification('خطأ في الاتصال بالخادم المالي والبرمجي', 'error'); }
+        }
+
+        async function executeShopFinance(action) {
+            const targetPlayer = document.getElementById('target-player-name').value.trim().toLowerCase();
+            let amount = parseFloat(document.getElementById('finance-amount').value);
+            
+            if(!targetPlayer || isNaN(amount) || amount <= 0) return showNotification('بيانات المعاملة غير صحيحة أو لم تختر لاعباً', 'error');
+
+            if(action === 'charge' && shopSessionUser.balance < amount) {
+                return showNotification('رصيد متجرك الحالي غير كافٍ للشحن!', 'error');
+            }
+
+            try {
+                // طلب واحد كافٍ وسحرm؛ السيرفر يتولى خصم الرصيد من الشوب وإضافته للاعب تلقائياً
+                const res = await fetch(`${BACKEND_URL}/api/admin/update-balance`, {
+                    method: 'POST', 
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ 
+                        admin_username: shopSessionUser.username, 
+                        target_username: targetPlayer, 
+                        action: action, 
+                        amount: amount 
+                    })
+                });
+                
+                if(res.ok) {
+                    if (action === 'withdraw') {
+                        showNotification(`تم سحب ${amount.toFixed(2)} د.ت بنجاح لرصيد متجرك`);
+                    } else {
+                        showNotification(`تم شحن اللاعب بمبلغ ${amount.toFixed(2)} د.ت خصماً من رصيدك`);
+                    }
+                    document.getElementById('finance-amount').value = "";
+                    document.getElementById('target-player-name').value = "";
+                    await loadShopPlayersData(); // تحديث أوتوماتيكي لرصيد الشوب واللاعبين من السيرفر
+                } else {
+                    const errData = await res.json();
+                    showNotification(errData.detail || 'فشلت العملية، تأكد من رصيد اللاعب', 'error');
+                }
+            } catch(e) { 
+                console.error(e);
+                showNotification('خطأ في معالجة الشبكة المالية للمحلات', 'error'); 
+            }
+        }
+
+        // دالة عرض اللاعبين بحجم مصغر (Compact)
+        // دالة عرض اللاعبين بحجم مصغر (Compact)
+        function renderFilteredUsers() {
+            const searchInput = document.getElementById('search-input');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const container = document.getElementById('players-table-body');
+            
+            if (!container) return;
+            
+            let filtered = createdPlayersList.filter(u => (u.username || '').toLowerCase().includes(searchTerm));
+            filtered.sort((a, b) => parseFloat(b.balance || 0) - parseFloat(a.balance || 0));
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="p-2 text-center text-secondary fw-bold" style="font-size: 0.75rem;">Aucun joueur trouvé</p>`;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(p => {
+                const safeUsername = escapeHTML(p.username);
+                const safeRole = escapeHTML(p.role || 'PLAYER').toUpperCase();
+                const safeId = escapeHTML(p.id || 'N/A');
+                
+                return `
+                <div class="bg-input-custom p-2 rounded-2 d-flex justify-content-between align-items-center border border-custom mb-1 shadow-sm">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-dark rounded-circle d-flex justify-content-center align-items-center border border-secondary" style="width: 24px; height: 24px;">
+                            <span style="font-size: 10px;">👤</span>
+                        </div>
+                        <div>
+                        <div class="d-flex align-items-center gap-1 mb-0">
+                        <p class="fw-bold text-white mb-0" style="font-size: 0.75rem;">${safeUsername}</p>
+                        <span class="badge bg-secondary border border-secondary text-white" style="font-size: 0.55rem; padding: 2px 4px;">ID: ${safeId}</span>
+                    </div>
+                            <span class="text-warning fw-bold" style="font-size: 0.55rem;">${safeRole}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="font-monospace text-emerald fw-bold" style="font-size: 0.75rem;">${parseFloat(p.balance).toFixed(2)} TND</span>
+                        <button onclick="selectPlayerForAction('${safeUsername}')" 
+                                class="btn btn-emerald rounded-1 d-flex align-items-center justify-content-center shadow-sm" style="width: 24px; height: 24px; padding: 0; font-size: 10px;">
+                            ➜
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+        function selectPlayerForAction(name) { 
+            document.getElementById('target-player-name').value = name;
+            document.getElementById('target-player-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        function changeShopLanguage(lang) { document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; }
+        function logoutShop() { localStorage.clear(); window.location.href = '/';  }
+
+        window.onload = async function() {
+            const saved = localStorage.getItem('alpha_user');
+            if(saved) {
+                shopSessionUser = JSON.parse(saved);
+                document.getElementById('shop-username-display').innerText = `Boutique: ${shopSessionUser.username}`;
+                document.getElementById('shop-balance-val').innerText = `${parseFloat(shopSessionUser.balance).toFixed(2)} TND`;
+                await loadShopPlayersData();
+            } else {
+                window.location.href = '/';
+            }
+        }
+       // 1. جلب سجل التحويلات (Transferts)
+        async function fetchShopTransactions() {
+            const container = document.querySelector('#panel-shop-transfert .bg-card-custom');
+            container.innerHTML = '<div class="text-center text-info fw-bold" style="font-size: 0.8rem;">جاري جلب السجلات... ⏳</div>';
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/transactions-history?username=${shopSessionUser.username}`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const txs = await res.json();
+                    if (txs.length === 0) {
+                        container.innerHTML = 'Aucune transaction enregistrée pour le moment.';
+                        return;
+                    }
+                    
+                    let html = `<div class="d-flex flex-column gap-2" style="max-height: 400px; overflow-y: auto;">`;
+                    txs.forEach(t => {
+                        const isCharge = t.action === 'charge' || t.action === 'deposit_request';
+                        const color = isCharge ? 'text-emerald' : 'text-danger';
+                        const sign = isCharge ? '+' : '-';
+                        const targetName = escapeHTML(t.target_username || t.target || 'مجهول');
+                        const actionName = escapeHTML(t.action);
+                        
+                        html += `
+                        <div class="bg-input-custom border border-custom rounded-2 p-2 d-flex justify-content-between align-items-center text-start" style="font-size: 0.75rem;">
+                            <div>
+                                <div class="text-white fw-bold">👤 ${targetName} <span class="text-secondary" style="font-size:0.6rem">(${actionName})</span></div>
+                                <div class="text-secondary font-monospace" style="font-size: 0.65rem;">🕒 ${t.date || ''}</div>
+                            </div>
+                            <div class="text-end font-monospace">
+                                <div class="${color} fw-bold">${sign}${parseFloat(t.amount).toFixed(2)} TND</div>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                    container.innerHTML = html;
+                    container.classList.remove('text-center', 'text-secondary', 'text-uppercase');
+                } else { container.innerHTML = 'Erreur lors du chargement des transactions.'; }
+            } catch (e) { container.innerHTML = 'Erreur de connexion.'; }
+        }
+
+        // 2. جلب سجل الكازينو (Casino) للوكيل (اللاعبين التابعين له)
+        async function fetchShopCasinoHistory() {
+            const container = document.querySelector('#panel-shop-casino .bg-card-custom');
+            container.innerHTML = '<div class="text-center text-info fw-bold" style="font-size: 0.8rem;">جاري المزامنة مع Hub88... ⏳</div>';
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/casino-history`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const allHistory = await res.json();
+                    
+                    // فلترة السجلات لتشمل فقط اللاعبين التابعين لهذا المتجر
+                    const shopPlayers = createdPlayersList.map(p => p.username);
+                    const myHistory = allHistory.filter(t => shopPlayers.includes(t.username));
+                    
+                    if (myHistory.length === 0) {
+                        container.innerHTML = 'Logs Hub88 synchronisés. Aucun pari de casino trouvé pour vos joueurs.';
+                        return;
+                    }
+                    
+                    let html = `<div class="d-flex flex-column gap-2" style="max-height: 400px; overflow-y: auto;">`;
+                    myHistory.forEach(t => {
+                        const isWin = t.action === 'win';
+                        const badgeColor = isWin ? 'text-emerald' : 'text-danger';
+                        const sign = isWin ? '+' : '-';
+                        const actionName = isWin ? 'Gain' : 'Mise';
+                        
+                        html += `
+                        <div class="bg-input-custom border border-custom rounded-2 p-2 d-flex justify-content-between align-items-center text-start" style="font-size: 0.75rem;">
+                            <div>
+                                <div class="text-white fw-bold">👤 ${escapeHTML(t.username)}</div>
+                                <div class="text-secondary font-monospace" style="font-size: 0.65rem;">🕒 ${t.date}</div>
+                            </div>
+                            <div class="text-end font-monospace">
+                                <span class="badge border border-secondary text-uppercase ${badgeColor} py-0 px-1 mb-1" style="font-size: 0.6rem;">${actionName}</span>
+                                <div class="${badgeColor} fw-bold">${sign}${parseFloat(t.amount).toFixed(2)} TND</div>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                    container.innerHTML = html;
+                    container.classList.remove('text-center', 'text-secondary', 'text-uppercase');
+                } else { container.innerHTML = 'Erreur serveur.'; }
+            } catch (e) { container.innerHTML = 'Erreur API.'; }
+        }
+
+        // 3. جلب الأوراق الرياضية (Sport Tickets)
+        async function fetchShopSportTickets() {
+            const container = document.querySelector('#shop-sport-container');
+            container.innerHTML = '<div class="bg-card-custom border-custom rounded-3 p-4 text-center text-info fw-bold" style="font-size: 0.8rem;">جاري جلب التذاكر... ⏳</div>';
+            
+            try {
+                // استخدام مسار الأونر لجلب كل التذاكر ثم فلترتها
+                const res = await fetch(`${BACKEND_URL}/api/admin/get-all-tickets?t=${Date.now()}`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const allTickets = await res.json();
+                    
+                    const shopPlayers = createdPlayersList.map(p => p.username);
+                    const myTickets = allTickets.filter(t => shopPlayers.includes(t.username || t.user));
+
+                    if (myTickets.length === 0) {
+                        container.innerHTML = '<div class="bg-card-custom border-custom rounded-3 p-4 text-center text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Aucun ticket en attente</div>';
+                        return;
+                    }
+                    
+                    let html = `<div class="d-flex flex-column gap-2" style="max-height: 400px; overflow-y: auto;">`;
+                    myTickets.forEach(t => {
+                        let badgeColor = t.status === "gagne" ? "text-emerald" : (t.status === "perdu" ? "text-danger" : (t.status === "cashout" ? "text-warning" : "text-info"));
+                        let matchesHtml = Array.isArray(t.details_list) ? t.details_list.map(g => `• ${escapeHTML(g.matchName)} (<span class="text-warning">${escapeHTML(g.outcome)}</span>)`).join('<br>') : escapeHTML(t.match || "Match Inconnu");
+                        
+                        html += `
+                        <div class="bg-card-custom border border-custom rounded-2 p-3 d-flex flex-column flex-md-row justify-content-between gap-2 text-start" style="font-size: 0.75rem;">
+                            <div class="text-white">
+                                <span class="text-secondary font-monospace">#${t.ticket_id || t.id || ''} • 👤 <span class="text-info">${t.username || t.user || ''}</span></span>
+                                <div class="mt-1 line-height-sm">${matchesHtml}</div>
+                            </div>
+                            <div class="text-end font-monospace border-top border-md-0 border-custom pt-2 pt-md-0">
+                                <div class="text-secondary" style="font-size: 0.7rem;">Cote: X${parseFloat(t.total_cote || 0).toFixed(2)} | Mise: ${parseFloat(t.mise || 0).toFixed(2)}</div>
+                                <div class="fw-bold ${badgeColor} my-1" style="font-size: 0.85rem;">Gain: +${parseFloat(t.gain || 0).toFixed(2)} TND</div>
+                                <span class="badge border border-secondary text-uppercase ${badgeColor} py-1 px-2" style="font-size: 0.65rem;">${t.status}</span>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                    container.innerHTML = html;
+                } else { container.innerHTML = '<div class="bg-card-custom p-3 text-center text-danger">Erreur</div>'; }
+            } catch (e) { container.innerHTML = '<div class="bg-card-custom p-3 text-center text-danger">Erreur de connexion</div>'; }
+        }
+
+        // 4. تغيير كلمة سر الشوب (الأمان)
+        async function updateShopPassword() {
+            const newPass = document.getElementById('shop-new-pass').value;
+            if (!newPass || newPass.length < 6) return showNotification('6 caractères minimum', 'error');
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/user/change-password`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ username: shopSessionUser.username, new_password: newPass })
+                });
+                if (res.ok) {
+                    showNotification('Mot de passe mis à jour!', 'success');
+                    document.getElementById('shop-new-pass').value = '';
+                } else {
+                    const data = await res.json();
+                    showNotification(data.detail || 'Erreur', 'error');
+                }
+            } catch (e) { showNotification('Erreur de connexion', 'error'); }
+        }
+// 🛡️ درع المقعد الفارغ (طرد بعد 15 دقيقة من الخمول)
+        let idleTime = 0;
+        function timerIncrement() {
+            idleTime = idleTime + 1;
+            if (idleTime > 15) { // 15 دقيقة
+                showNotification("تم تسجيل الخروج بسبب عدم النشاط!", "warning");
+                setTimeout(logoutShop, 1500);
+            }
+        }
+        // تصفير العداد عند أي حركة
+        document.body.addEventListener('mousemove', () => idleTime = 0);
+        document.body.addEventListener('keypress', () => idleTime = 0);
+        setInterval(timerIncrement, 60000); // يفحص كل دقيقة
+
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false; // تعطيل F12
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // تعطيل Ctrl+Shift+I
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // تعطيل Ctrl+Shift+C
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // تعطيل Ctrl+Shift+J
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // تعطيل Ctrl+U
+        }
+    </script>
+
+</script>
+</body>
+</html>

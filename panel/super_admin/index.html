@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha Core - Mini Super Admin Panel</title>
+
+    <!-- Bootstrap 5 CSS & FontAwesome & Google Fonts -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --emerald-primary: #10b981;
+            --emerald-hover: #059669;
+            --bg-main: #020617;
+            --bg-sidebar: #070d1a;
+            --bg-card: #0b1329;
+            --bg-input: #020617;
+            --border-dark: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: #e2e8f0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.8rem;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* كاردز مصغرة ومرتبة */
+        .card-mini {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .text-emerald {
+            color: var(--emerald-primary) !important;
+        }
+
+        /* أزرار صغيرة وعملية */
+        .btn-mini {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 0.35rem;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-emerald-mini {
+            background-color: var(--emerald-primary);
+            color: #020617;
+        }
+        .btn-emerald-mini:hover {
+            background-color: var(--emerald-hover);
+            color: #020617;
+        }
+
+        /* حقول إدخال مصغرة */
+        .form-control-mini, .form-select-mini {
+            background-color: var(--bg-input) !important;
+            border: 1px solid var(--border-dark) !important;
+            color: #ffffff !important;
+            font-family: 'JetBrains Mono', monospace;
+            border-radius: 0.35rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .form-control-mini:focus, .form-select-mini:focus {
+            border-color: var(--emerald-primary) !important;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+        }
+
+        /* القائمة الجانبية المصغرة */
+        .sidebar-link-mini {
+            color: #cbd5e1;
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-dark);
+            border-radius: 0.4rem;
+            padding: 0.4rem 0.6rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        .sidebar-link-mini:hover {
+            background-color: var(--border-dark);
+            color: #fff;
+        }
+
+        .active-shop-btn {
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            border-color: var(--emerald-primary) !important;
+            color: var(--emerald-primary) !important;
+        }
+
+        .offcanvas {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-dark);
+            width: 260px !important;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        input[type=range] { accent-color: var(--emerald-primary); height: 4px; }
+        
+        .user-row-mini {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-dark);
+            border-radius: 0.4rem;
+            padding: 0.35rem 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .user-row-mini:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--emerald-primary);
+        }
+    </style>
+</head>
+<body class="d-flex flex-column flex-md-row min-vh-100">
+
+    <!-- حاوية الإشعارات المصغرة -->
+    <div id="toast-container" class="position-fixed top-0 end-0 p-2" style="z-index: 1055; width: 100%; max-width: 320px;"></div>
+
+    <!-- القائمة الجانبية (للكمبيوتر) -->
+    <aside class="d-none d-md-flex flex-column justify-content-between p-3" style="width: 250px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-dark);">
+        <div class="d-flex flex-column gap-3">
+            <div class="card-mini d-flex align-items-center justify-content-between py-1">
+                <span class="small fw-bold text-secondary" style="font-size: 0.7rem;"><i class="fa-solid fa-globe"></i> Lang:</span>
+                <select id="lang-select" onchange="changeLanguage(this.value)" class="form-select form-select-mini w-auto border-0 shadow-none cursor-pointer py-0">
+                    <option value="fr">Français</option>
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+
+            <div>
+                <p class="text-secondary fw-bold small mb-2 text-uppercase" style="letter-spacing: 1px; font-size: 0.65rem;" id="menu-title">Gestion Super Admin</p>
+                <nav id="sadmin-sidebar-nav" class="d-flex flex-column gap-1">
+                    <button onclick="switchSadminPanelSection('reseau')" id="btn-sadmin-reseau" class="sidebar-link-mini active-shop-btn">
+                        👑 Accounts
+                    </button>
+                    <button onclick="switchSadminPanelSection('casino')" id="btn-sadmin-casino" class="sidebar-link-mini">
+                        🎰 Casino
+                    </button>
+                    <button onclick="switchSadminPanelSection('transfert')" id="btn-sadmin-transfert" class="sidebar-link-mini">
+                        💸 Transferts
+                    </button>
+                    <button onclick="switchSadminPanelSection('transaction')" id="btn-sadmin-transaction" class="sidebar-link-mini">
+                        📊 Transactions
+                    </button>
+                    <button onclick="switchSadminPanelSection('sport')" id="btn-sadmin-sport" class="sidebar-link-mini">
+                        ⚽ Tickets
+                    </button>
+                    <button onclick="openPasswordModal()" class="sidebar-link-mini text-secondary mt-2">
+                        🔑 Password
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <div class="pt-2 border-top border-dark mt-auto">
+            <button onclick="logout()" class="btn btn-sm w-100 fw-bold py-1" style="background-color: rgba(225, 29, 72, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185; font-size: 0.75rem;" id="btn-logout">
+                🚪 Déconnexion
+            </button>
+        </div>
+    </aside>
+
+    <!-- القائمة الجانبية (للهاتف - Offcanvas) -->
+    <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="mobileSidebar">
+        <div class="offcanvas-header border-bottom border-dark px-3 py-2">
+            <h6 class="offcanvas-title text-emerald fw-bold" style="font-size: 0.85rem;"><i class="fa-solid fa-bars-staggered"></i> ALPHA SUPER</h6>
+            <button type="button" class="btn-close btn-close-white btn-sm shadow-none" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column justify-content-between p-2.5">
+            <nav id="sadmin-sidebar-nav-mobile" class="d-flex flex-column gap-1">
+                <button onclick="switchSadminPanelSection('reseau'); closeSidebarManually();" class="sidebar-link-mini active-shop-btn">👑 Accounts</button>
+                <button onclick="switchSadminPanelSection('casino'); closeSidebarManually();" class="sidebar-link-mini">🎰 Casino</button>
+                <button onclick="switchSadminPanelSection('transfert'); closeSidebarManually();" class="sidebar-link-mini">💸 Transferts</button>
+                <button onclick="switchSadminPanelSection('transaction'); closeSidebarManually();" class="sidebar-link-mini">📊 Transactions</button>
+                <button onclick="switchSadminPanelSection('sport'); closeSidebarManually();" class="sidebar-link-mini">⚽ Tickets</button>
+            </nav>
+            <div class="pt-2 border-top border-dark mt-auto">
+                <button onclick="logout()" class="btn btn-sm w-100 fw-bold py-1" style="background-color: rgba(225, 29, 72, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185; font-size: 0.75rem;">🚪 Déconnexion</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- منطقة المحتوى الرئيسية -->
+    <div class="flex-grow-1 d-flex flex-column position-relative w-100">
+        
+        <!-- الهيدر العلوي المصغر -->
+        <header class="card-mini border-bottom border-dark px-3 py-1.5 d-flex justify-content-between align-items-center shadow-sm flex-shrink-0 rounded-0">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-dark btn-sm d-md-none border border-dark text-white px-2 py-1 shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <span class="badge text-emerald fw-bold px-2 py-1 border rounded-2" style="background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); font-size: 0.65rem;">
+                    Super: <span id="owner-username">Connected</span>
+                </span>
+            </div>
+            <div class="card-mini px-2 py-0.5 rounded-2 d-flex align-items-center gap-2 bg-black">
+                <span class="text-secondary" style="font-size: 0.65rem;">الرصيد:</span>
+                <span class="text-emerald fw-bold font-mono" style="font-size: 0.75rem;" id="sadmin-balance-val">0.00 TND</span>
+            </div>
+        </header>
+
+        <!-- مساحة العمل -->
+        <main class="flex-grow-1 overflow-y-auto p-2 no-scrollbar mx-auto w-100" style="max-width: 900px;">
+            
+            <!-- القسم 1: الشبكة (Network) -->
+            <div id="panel-sadmin-reseau" class="sadmin-main-view d-flex flex-column gap-2">
+                
+                <!-- حقل البحث المصغر -->
+                <div class="card-mini p-1 px-2 d-flex align-items-center">
+                    <span class="text-secondary me-2" style="font-size: 0.75rem;"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="search-input" oninput="filterAdmins()" placeholder="بحث عن أدمن في الشبكة..." class="form-control form-control-mini border-0 bg-transparent text-white shadow-none py-0" dir="rtl">
+                </div>
+
+                <!-- إنشاء حساب جديد (مضغوط) -->
+                <section class="card-mini border-start border-emerald border-3">
+                    <h6 class="fw-bold text-white mb-1" dir="rtl" style="font-size: 0.75rem;" id="title-create-user">👑 إنشاء حساب أدمن جديد</h6>
+                    <div class="row g-1 align-items-center">
+                        <div class="col-6 col-md-3">
+                            <input type="text" id="new-user-name" placeholder="Username" class="form-control form-control-mini font-mono text-center">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <input type="password" id="new-user-pass" placeholder="Password" class="form-control form-control-mini font-mono text-center">
+                        </div>
+                        <div class="col-8 col-md-4">
+                            <input type="text" id="new_phone" class="form-control form-control-mini font-mono text-center" placeholder="Phone (+216...)">
+                        </div>
+                        <div class="col-4 col-md-2">
+                            <button onclick="createAdminUser()" class="btn btn-mini btn-emerald-mini w-100 py-1" id="btn-create">تثبيت</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- المعاملات المالية (Console) -->
+                <section id="financial-card" class="card-mini">
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-dark pb-1 mb-1">
+                        <h6 class="fw-bold text-white m-0" dir="rtl" style="font-size: 0.7rem;" id="title-table-console">📋 المعاملات المالية</h6>
+                    </div>
+                    
+                    <div class="row g-1 mb-1 align-items-center">
+                        <div class="col-3">
+                            <input type="text" id="target-action-user" readonly placeholder="أدمن" class="form-control form-control-mini text-center text-emerald fw-bold py-1" dir="rtl">
+                        </div>
+                        <div class="col-3">
+                            <input type="number" id="target-action-amount" placeholder="المبلغ" class="form-control form-control-mini text-center font-mono py-1" dir="rtl">
+                        </div>
+                        <div class="col-3">
+                            <button onclick="executeAction('charge')" id="btn-credit" class="btn btn-mini btn-emerald-mini w-100 py-1">شحن</button>
+                        </div>
+                        <div class="col-3">
+                            <button onclick="executeAction('withdraw')" id="btn-retirer" class="btn btn-mini btn-danger w-100 py-1">سحب</button>
+                        </div>
+                    </div>
+
+                    <div class="row g-1 align-items-center pt-1 border-top border-dark">
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex align-items-center gap-1 bg-black border border-dark rounded-2 px-2 py-1">
+                                <span class="text-secondary font-mono fw-bold" style="font-size: 0.65rem;">RTP:<span id="rtp-val-label" class="ms-1 text-white">50%</span></span>
+                                <input type="range" class="form-range flex-grow-1 m-0" id="ctrl-rtp-range" min="1" max="99" value="50" oninput="document.getElementById('rtp-val-label').innerText = this.value + '%'">
+                                <button onclick="saveRtpAndBlock(0)" class="btn btn-mini btn-emerald-mini py-0 px-2">حفظ</button>
+                                <button onclick="saveRtpAndBlock(1)" class="btn btn-mini btn-danger py-0 px-2">حظر</button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 mt-1 mt-md-0">
+                            <div class="d-flex gap-1">
+                                <input type="password" id="ctrl-admin-new-pass" placeholder="كلمة سر جديدة" class="form-control form-control-mini font-mono text-center flex-grow-1 py-1" dir="rtl">
+                                <button onclick="changeAdminPasswordFromSadmin()" class="btn btn-mini btn-info text-dark fw-bold px-3 py-1" style="font-size: 0.7rem;">تغيير</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- كروت الأدمنز (Compact) -->
+                <div id="owner-network-list" class="d-flex flex-column gap-1 pb-2" style="max-height: 380px; overflow-y: auto;">
+                    <!-- سيتم حقن الكروت هنا -->
+                </div>
+            </div>
+
+            <!-- قسم 2: الكازينو -->
+            <div id="panel-sadmin-casino" class="sadmin-main-view d-none">
+                <div class="card-mini p-4 text-center text-secondary">
+                    <i class="fa-solid fa-ghost fs-3 mb-2"></i><br>
+                    <span class="fw-bold text-uppercase" style="font-size: 0.7rem;">Aucun pari de casino enregistré.</span>
+                </div>
+            </div>
+
+            <!-- قسم 3: التحويلات -->
+            <div id="panel-sadmin-transfert" class="sadmin-main-view d-none">
+                <div class="card-mini p-4 text-center text-secondary">
+                    <i class="fa-solid fa-money-bill-transfer fs-3 mb-2"></i><br>
+                    <span class="fw-bold text-uppercase" style="font-size: 0.7rem;">Aucun transfert financier trouvé.</span>
+                </div>
+            </div>
+
+            <!-- قسم 4: المعاملات -->
+            <div id="panel-sadmin-transaction" class="sadmin-main-view d-none">
+                <!-- سيتم حقن الفلتر والكروت هنا -->
+            </div>
+
+            <!-- قسم 5: الرياضة -->
+            <div id="panel-sadmin-sport" class="sadmin-main-view d-none">
+                <!-- سيتم حقن التذاكر هنا -->
+            </div>
+
+        </main>
+    </div>
+
+    <!-- نافذة تعديل كلمة السر -->
+    <div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content card-mini border-dark shadow">
+                <div class="modal-header border-bottom border-dark py-1.5 px-3">
+                    <h6 class="modal-title text-white fw-bold" style="font-size: 0.75rem;"><i class="fa-solid fa-key text-emerald"></i> Modifier le mot de passe</h6>
+                    <button type="button" class="btn-close btn-close-white btn-sm shadow-none" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-2">
+                    <input type="password" id="new-sys-pass" placeholder="Nouveau mot de passe" class="form-control form-control-mini mb-2 font-mono text-center">
+                    <button onclick="submitNewPassword()" class="btn btn-mini btn-emerald-mini w-100 fw-bold py-1">Mettre à jour</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const BACKEND_URL = "https://alpha-backend-server.onrender.com";
+
+        
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/'; 
+
+        let user = JSON.parse(localStorage.getItem('alpha_user'));
+        if (!user || user.role !== 'super_admin') {
+            localStorage.clear();
+            window.location.href = '/'; 
+        }
+
+        let allAdmins = [];
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.toString().escapeHTML(/[&<>'"]/g,
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        function getAuthHeaders() {
+            return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('owner-username');
+            if(el) el.innerText = user.username;
+            loadNetworkData();
+        });
+
+        const translations = {
+            fr: { menu: "Gestion Super Admin", create: "👑 Créer un nouveau compte", console: "📋 Console de gestion", credit: "Créditer", retirer: "Retirer", out: "Déconnexion" },
+            ar: { menu: "إدارة السوبر أدمن", create: "👑 إنشاء حساب أدمن جديد", console: "📋 لوحة التحكم المالي", credit: "شحن رصيد", retirer: "سحب رصيد", out: "تسجيل الخروج" },
+            en: { menu: "Super Admin Menu", create: "👑 Create Admin Account", console: "📋 Financial Console", credit: "Charge", retirer: "Withdraw", out: "Logout" }
+        };
+
+        function changeLanguage(lang) {
+            document.body.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+            document.getElementById('menu-title').innerText = translations[lang].menu;
+            document.getElementById('title-create-user').innerText = translations[lang].create;
+            document.getElementById('title-table-console').innerText = translations[lang].console;
+            document.getElementById('btn-credit').innerText = translations[lang].credit;
+            document.getElementById('btn-retirer').innerText = translations[lang].retirer;
+            document.querySelectorAll('#btn-logout').forEach(btn => btn.innerHTML = `🚪 ${translations[lang].out}`);
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toastEl = document.createElement('div');
+            const icon = type === 'success' ? '✅' : '❌';
+            toastEl.className = `toast align-items-center text-bg-dark border-0 mb-1 show shadow`;
+            toastEl.setAttribute('role', 'alert'); 
+            
+            // 🛡️ استخدام الفلتر القوي بدلاً من الفلتر الضعيف
+            const safeMessage = typeof message === 'string' ? escapeHTML(message) : message;
+
+            toastEl.innerHTML = `
+                <div class="d-flex ${type === 'success' ? 'border-success' : 'border-danger'} border-start border-3 rounded-2" style="background-color: var(--bg-card);">
+                    <div class="toast-body fw-bold d-flex gap-2 py-2" style="font-size: 0.7rem; color: white;">
+                        <span>${icon}</span> ${safeMessage}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto btn-sm shadow-none" data-bs-dismiss="toast" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            container.appendChild(toastEl);
+            setTimeout(() => { toastEl.remove(); }, 3000);
+        }
+
+        function closeSidebarManually() {
+            const offcanvasElement = document.getElementById('mobileSidebar');
+            if(offcanvasElement) {
+                const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                if(bsOffcanvas) bsOffcanvas.hide();
+            }
+        }
+
+        function switchSadminPanelSection(sectionId) {
+            document.querySelectorAll('.sadmin-main-view').forEach(el => { el.classList.remove('d-flex'); el.classList.add('d-none'); });
+            document.querySelectorAll('.sidebar-link-mini').forEach(btn => btn.classList.remove('active-shop-btn'));
+            
+            const targetSection = document.getElementById(`panel-sadmin-${sectionId}`);
+            if (targetSection) {
+                targetSection.classList.remove('d-none');
+                if(sectionId === 'reseau') targetSection.classList.add('d-flex'); 
+            }
+            
+            document.querySelectorAll(`[onclick*="switchSadminPanelSection('${sectionId}')"]`).forEach(btn => btn.classList.add('active-shop-btn'));
+
+            // الروابط المكتملة
+            if (sectionId === 'sport') loadSportTickets();
+            if (sectionId === 'transaction') loadTransactions();
+            if (sectionId === 'casino') loadCasinoHistory();
+            if (sectionId === 'transfert') loadTransferts();
+        }
+
+        async function loadNetworkData() {
+            try {
+                const uRes = await fetch(`${BACKEND_URL}/api/admin/users`, { method: 'GET', headers: getAuthHeaders() });
+                
+                if (uRes.status === 401 || uRes.status === 403) {
+                    showNotification('انتهت صلاحية الجلسة...', 'error');
+                    setTimeout(logout, 1500);
+                    return;
+                }
+
+                if(uRes.ok){
+                    const users = await uRes.json();
+                    const me = users.find(u => u.username === user.username);
+                    if(me) {
+                        user.balance = me.balance;
+                        document.getElementById('sadmin-balance-val').innerText = `${parseFloat(user.balance).toFixed(2)} TND`;
+                        localStorage.setItem('alpha_user', JSON.stringify(user));
+                    }
+                    allAdmins = users.filter(u => u.role === 'admin' && u.created_by === user.username);
+                    renderAdminsList(allAdmins);
+                }
+            } catch(e){
+                document.getElementById('owner-network-list').innerHTML = `<div class="text-center p-2 text-danger" style="font-size: 0.7rem;">خطأ في الاتصال ❌</div>`;
+            }
+        }
+
+        function renderAdminsList(adminsArray) {
+            const listContainer = document.getElementById('owner-network-list'); 
+            if(!listContainer) return;
+            listContainer.innerHTML = '';
+            
+            if(adminsArray.length === 0) {
+                listContainer.innerHTML = `<div class="text-center text-secondary p-2" style="font-size: 0.7rem;">لا يوجد أدمنز.</div>`;
+                return;
+            }
+
+            adminsArray.forEach(u => {
+                const userRole = u.role ? escapeHTML(u.role).toUpperCase() : 'ADMIN';
+                const userRtp = u.rtp !== undefined && u.rtp !== null ? u.rtp : 50;
+                const userBalance = u.balance !== undefined && u.balance !== null ? parseFloat(u.balance).toFixed(2) : "0.00";
+                const statusDot = u.is_blocked === 1 ? 'bg-danger' : 'bg-success';
+                
+                // 🛡️ التعديلات الأمنية: تغليف جميع المدخلات
+                const usernameClean = escapeHTML(u.username);
+                const safePhone = escapeHTML(u.phone || '');
+                const phoneBadge = safePhone ? `<span class="badge bg-black text-info border border-dark ms-1 px-1 py-0" style="font-size: 0.6rem;"><i class="fa-solid fa-phone"></i> ${safePhone}</span>` : '';
+                
+                const safeSecret = escapeHTML(u.two_factor_secret || '');
+                const secretBadge = safeSecret
+                ? `<div class="d-inline-flex align-items-center bg-black border border-dark rounded px-1 ms-1" onclick="event.stopPropagation()">
+                       <i class="fa-solid fa-key text-success me-1" style="font-size: 0.55rem;"></i>
+                       <input type="text" value="${safeSecret}" class="bg-transparent border-0 text-warning font-mono p-0 text-center" style="width: 60px; font-size: 0.6rem; outline: none;" readonly>
+                       <button onclick="copySecretCode('${safeSecret}', event)" class="btn btn-sm btn-link text-success p-0 ms-1 shadow-none" style="font-size: 0.6rem;">
+                           <i class="fa-regular fa-copy"></i>
+                       </button>
+                   </div>`
+                : ``;
+                
+                const safeId = escapeHTML(u.id || 'N/A');
+
+                listContainer.innerHTML += `
+                    <div class="user-row-mini d-flex justify-content-between align-items-center" onclick="selectForControl('${usernameClean}', ${userRtp})">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="position-relative bg-black rounded-circle d-flex justify-content-center align-items-center border border-dark" style="width: 24px; height: 24px;">
+                                <i class="fa-solid fa-user text-secondary" style="font-size: 9px;"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle p-1 ${statusDot} border border-dark rounded-circle"></span>
+                            </div>
+                            <div>
+                                <div class="text-white fw-bold mb-0 d-flex align-items-center flex-wrap gap-1" style="font-size: 0.75rem;">
+                                    ${usernameClean} 
+                                    <span class="badge bg-dark border border-dark text-secondary font-mono" style="font-size: 0.6rem; padding: 1px 3px;">ID: ${safeId}</span>
+                                    ${secretBadge} ${phoneBadge}
+                                </div>
+                                <div class="text-emerald font-mono" style="font-size: 0.6rem;">${userRole} • RTP: ${userRtp}%</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 font-mono">
+                            <span class="text-white fw-bold" style="font-size: 0.75rem;">${userBalance} TND</span>
+                            <button class="btn btn-mini btn-emerald-mini py-0 px-1" style="font-size: 0.6rem;">➜</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function filterAdmins() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allAdmins.filter(admin => admin.username.toLowerCase().includes(query));
+            renderAdminsList(filtered);
+        }
+
+        function selectForControl(username, rtp) {
+            document.getElementById('target-action-user').value = username;
+            document.getElementById('ctrl-rtp-range').value = rtp;
+            document.getElementById('rtp-val-label').innerText = rtp + '%';
+            document.getElementById('financial-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            showNotification(`Sélectionné: [${username}]`);
+        }
+
+        async function executeAction(action) {
+            const target_username = document.getElementById('target-action-user').value;
+            const amountInput = document.getElementById('target-action-amount').value;
+            const actionBtn = action === 'charge' ? document.getElementById('btn-credit') : document.getElementById('btn-retirer');
+
+            if(!target_username) return showNotification('Sélectionnez un admin!', 'error');
+            const amount = parseFloat(amountInput);
+            if(isNaN(amount) || amount <= 0) return showNotification('Montant invalide!', 'error');
+
+            if (actionBtn) { actionBtn.disabled = true; actionBtn.innerText = '⏳'; }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/update-balance`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ admin_username: user.username, target_username, action, amount })
+                });
+                if(res.ok) { 
+                    showNotification('Succès! ✅', 'success'); 
+                    document.getElementById('target-action-amount').value = ''; 
+                    await loadNetworkData(); 
+                } else { showNotification('Erreur', 'error'); }
+            } catch(e) { 
+                showNotification('Erreur', 'error'); 
+            } finally {
+                if (actionBtn) {
+                    actionBtn.disabled = false;
+                    actionBtn.innerText = action === 'charge' ? 'شحن' : 'سحب';
+                }
+            }
+        }
+
+        async function createAdminUser() {
+            const usernameInput = document.getElementById('new-user-name');
+            const passwordInput = document.getElementById('new-user-pass');
+            const phoneInput = document.getElementById('new_phone');
+            const btnCreate = document.getElementById('btn-create');
+
+            const username = usernameInput.value.trim().toLowerCase();
+            const password = passwordInput.value;
+            const phone = phoneInput ? phoneInput.value.trim() : ''; 
+
+            if(!username || !password) return showNotification('Remplir les champs!', 'error');
+
+            if(btnCreate) { btnCreate.disabled = true; btnCreate.innerText = '⏳'; }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/register`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ username, password, role: 'admin', created_by: user.username, phone }) 
+                });
+                
+                const data = await res.json(); 
+                if(res.ok){
+                    showNotification('Compte créé!', 'success');
+                    usernameInput.value = ''; passwordInput.value = ''; if(phoneInput) phoneInput.value = '';
+                    loadNetworkData();
+                } else { 
+                    showNotification(data.detail || 'Erreur', 'error'); 
+                }
+            } catch(e) { 
+                showNotification('Erreur', 'error'); 
+            } finally {
+                if(btnCreate) { btnCreate.disabled = false; btnCreate.innerText = 'تثبيت'; }
+            }
+        }
+
+        async function saveRtpAndBlock(blockStatus) {
+            const target_username = document.getElementById('target-action-user').value;
+            let rawRtp = parseInt(document.getElementById('ctrl-rtp-range').value);
+            
+            if (isNaN(rawRtp)) rawRtp = 50;
+            const rtp = Math.max(1, Math.min(99, rawRtp));
+
+            if(!target_username) return showNotification('Sélectionnez un compte!', 'error');
+            
+            const res = await fetch(`${BACKEND_URL}/api/admin/configure-account`, {
+                method: 'POST', headers: getAuthHeaders(),
+                body: JSON.stringify({ admin_username: user.username, target_username, rtp, is_blocked: blockStatus })
+            });
+            if(res.ok) { showNotification('Configuration enregistrée!'); loadNetworkData(); }
+        }
+
+        async function changeAdminPasswordFromSadmin() {
+            const target = document.getElementById('target-action-user').value;
+            const newPassword = document.getElementById('ctrl-admin-new-pass').value.trim();
+            if(!target || !newPassword || newPassword.length < 4) return showNotification('Données invalides', 'error');
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/change-player-password`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ admin_username: user.username, target_username: target, new_password: newPassword })
+                });
+                if(res.ok) {
+                    showNotification(`Mot de passe modifié !`);
+                    document.getElementById('ctrl-admin-new-pass').value = '';
+                } else { showNotification('Erreur', 'error'); }
+            } catch(e) { showNotification('Erreur', 'error'); }
+        }
+
+        let allTransactionsCache = []; 
+
+        async function loadTransactions() {
+            const container = document.getElementById('panel-sadmin-transaction');
+            container.innerHTML = '<div class="text-center p-3 text-emerald fw-bold" style="font-size: 0.7rem;">Chargement... ⏳</div>';
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/transactions-history?username=${user.username}`, {
+                    method: 'GET', headers: getAuthHeaders()
+                });
+
+                if (res.ok) {
+                    allTransactionsCache = await res.json();
+                    renderTransactionsUI(); 
+                } else { container.innerHTML = '<div class="text-center p-3 text-danger" style="font-size: 0.7rem;">Erreur</div>'; }
+            } catch(e) { container.innerHTML = '<div class="text-center p-3 text-danger" style="font-size: 0.7rem;">Erreur</div>'; }
+        }
+
+        function renderTransactionsUI() {
+            const container = document.getElementById('panel-sadmin-transaction');
+            let html = `
+                <div class="row g-1 mb-2 card-mini p-2 align-items-end" style="font-size: 0.7rem;">
+                    <div class="col-5">
+                        <label class="text-secondary mb-0">De:</label>
+                        <input type="date" id="tx-start-date" class="form-control form-control-mini text-center py-0">
+                    </div>
+                    <div class="col-5">
+                        <label class="text-secondary mb-0">À:</label>
+                        <input type="date" id="tx-end-date" class="form-control form-control-mini text-center py-0">
+                    </div>
+                    <div class="col-2 mt-auto">
+                        <button onclick="applyDateFilter()" class="btn btn-mini btn-emerald-mini w-100 py-0.5"><i class="fa-solid fa-search"></i></button>
+                    </div>
+                </div>
+                <div id="tx-list-container" class="d-flex flex-column gap-1 overflow-y-auto" style="max-height: 350px;"></div>
+            `;
+            container.innerHTML = html;
+            displayFilteredTransactions(allTransactionsCache);
+        }
+
+        function applyDateFilter() {
+            const startDate = document.getElementById('tx-start-date').value;
+            const endDate = document.getElementById('tx-end-date').value;
+            let filtered = allTransactionsCache;
+
+            if (startDate || endDate) {
+                filtered = allTransactionsCache.filter(t => {
+                    const txDate = t.date ? t.date.split(' ')[0] : '';
+                    if (!txDate) return false;
+                    let isAfterStart = true;
+                    let isBeforeEnd = true;
+                    if (startDate) isAfterStart = txDate >= startDate;
+                    if (endDate) isBeforeEnd = txDate <= endDate;
+                    return isAfterStart && isBeforeEnd;
+                });
+            }
+            displayFilteredTransactions(filtered);
+        }
+
+        function displayFilteredTransactions(transactions) {
+            const listContainer = document.getElementById('tx-list-container');
+            if (!transactions || transactions.length === 0) {
+                listContainer.innerHTML = '<div class="card-mini p-3 text-center text-secondary" style="font-size: 0.7rem;">Aucune transaction.</div>';
+                return;
+            }
+
+            let html = '';
+            transactions.forEach(t => {
+                const isCharge = t.action === 'charge'; 
+                const color = isCharge ? 'text-success' : 'text-danger';
+                const sign = isCharge ? '+' : '-';
+                const targetName = (t.target_username || t.target || 'مجهول').escapeHTML(/</g, "&lt;").escapeHTML(/>/g, "&gt;");
+                
+                html += `
+                    <div class="bg-black border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                        <div>
+                            <div class="text-white fw-bold">👤 ${targetName}</div>
+                            <div class="text-secondary font-mono" style="font-size: 0.6rem;">🕒 ${t.date || ''}</div>
+                        </div>
+                        <div class="text-end font-mono">
+                            <div class="${color} fw-bold" style="font-size: 0.75rem;">${sign}${parseFloat(t.amount).toFixed(2)} TND</div>
+                        </div>
+                    </div>`;
+            });
+            listContainer.innerHTML = html;
+        }
+
+        async function resetUser2FA() {
+            const target = secureSelectedUser;
+            if (!target) return showNotification('الرجاء تحديد حساب أولاً!', 'error');
+            
+            if (!confirm(`هل أنت متأكد من إعادة تعيين مفتاح 2FA للحساب: ${target}؟ سيتم إلغاء المفتاح القديم ولن يتمكن من الدخول به.`)) return;
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/reset-2fa`, {
+                    method: 'POST', 
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ admin_username: user.username, target_username: target })
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    // عرض المفتاح الجديد في نافذة Prompt ليتمكن المدير من نسخه بسهولة
+                    prompt(`تم إعادة تعيين 2FA بنجاح للحساب ${target}.\n\nانسخ هذا المفتاح وأرسله للمستخدم فوراً (لن يظهر مرة أخرى):`, data.new_secret);
+                    showNotification('تم إعادة تعيين المفتاح!', 'success');
+                } else { 
+                    showNotification(data.detail || 'Erreur', 'error'); 
+                }
+            } catch (e) { 
+                showNotification('Erreur de connexion', 'error'); 
+            }
+        }
+
+        async function loadSportTickets() {
+            const container = document.getElementById('panel-sadmin-sport');
+            container.innerHTML = '<div class="text-center p-3 text-emerald fw-bold" style="font-size: 0.7rem;">Chargement... ⏳</div>';
+            
+            try {
+                const usersRes = await fetch(`${BACKEND_URL}/api/admin/users`, { method: 'GET', headers: getAuthHeaders() });
+                if (!usersRes.ok) return;
+                const users = await usersRes.json();
+                const myUsers = users.filter(u => u.created_by === user.username).map(u => u.username);
+
+                let allTicketsHtml = '';
+                
+                for (const target of myUsers) {
+                    const ticketsRes = await fetch(`${BACKEND_URL}/api/admin/get-player-tickets?username=${encodeURIComponent(target)}`, { method: 'GET', headers: getAuthHeaders() });
+                    if (ticketsRes.ok) {
+                        const tickets = await ticketsRes.json();
+                        tickets.forEach(t => {
+                            let badgeColor = t.status === "gagne" ? "text-success" : (t.status === "perdu" ? "text-danger" : (t.status === "cashout" ? "text-warning" : "text-info"));
+                            
+                            let matchesHtml = Array.isArray(t.details_list) ? 
+                                t.details_list.map(g => `• ${g.matchName.escapeHTML(/</g, "&lt;")} (<span class="text-warning">${g.outcome}</span>)`).join('<br>') : 
+                                (t.match ? t.match.escapeHTML(/</g, "&lt;") : "Match Inconnu");
+
+                            let safeTarget = target.escapeHTML(/</g, "&lt;");
+
+                            allTicketsHtml += `
+                                <div class="bg-black border border-dark rounded-2 p-2 d-flex flex-column gap-1" style="font-size: 0.7rem;">
+                                    <div class="text-white">${matchesHtml}</div>
+                                    <div class="text-end font-mono border-top border-dark pt-1">
+                                        <div class="text-secondary" style="font-size: 0.6rem;">Joueur: <span class="text-white fw-bold">${safeTarget}</span></div>
+                                        <div class="text-light" style="font-size: 0.6rem;">Mise: ${parseFloat(t.mise).toFixed(2)} | Cote: X${parseFloat(t.total_cote).toFixed(2)}</div>
+                                        <div class="fw-bold ${badgeColor}" style="font-size: 0.75rem;">Gain: +${parseFloat(t.gain).toFixed(2)} TND</div>
+                                        <span class="badge border border-secondary py-0 px-1 text-uppercase ${badgeColor}" style="font-size: 0.55rem;">${t.status}</span>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                }
+
+                if (allTicketsHtml === '') {
+                    container.innerHTML = '<div class="card-mini p-3 text-center text-secondary" style="font-size: 0.7rem;">Aucun ticket actif.</div>';
+                } else {
+                    container.innerHTML = `<div class="d-flex flex-column gap-1 overflow-y-auto" style="max-height: 380px;">${allTicketsHtml}</div>`;
+                }
+            } catch(e) {
+                container.innerHTML = '<div class="text-center p-3 text-danger" style="font-size: 0.7rem;">Erreur</div>';
+            }
+        }
+
+        function openPasswordModal() { 
+            new bootstrap.Modal(document.getElementById('passwordModal')).show();
+        }
+        
+        async function submitNewPassword() {
+            const new_password = document.getElementById('new-sys-pass').value.trim();
+            const updateBtn = document.querySelector('#passwordModal button.btn-mini');
+            
+            if(!new_password || new_password.length < 6) return showNotification('6 caractères minimum !', 'error');
+
+            if(updateBtn) { updateBtn.disabled = true; updateBtn.innerText = '⏳'; }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/user/change-password`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ username: user.username, new_password })
+                });
+                if(res.ok) { 
+                    showNotification('Mot de passe mis à jour !', 'success'); 
+                    document.getElementById('new-sys-pass').value = '';
+                    bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+                } else {
+                    showNotification('Erreur', 'error');
+                }
+            } catch(e) { 
+                showNotification('Erreur', 'error'); 
+            } finally {
+                if(updateBtn) { updateBtn.disabled = false; updateBtn.innerText = 'Mettre à jour'; }
+            }
+        }
+
+        function logout() { 
+            localStorage.clear(); 
+            window.location.href = '/';
+        }
+
+        function copySecretCode(secret, event) {
+            event.stopPropagation(); 
+            navigator.clipboard.writeText(secret).then(() => {
+                showNotification(`Copié: ${secret}`, 'success');
+            }).catch(err => {
+                showNotification('Erreur', 'error');
+            });
+        }
+
+        let idleTime = 0;
+        function timerIncrement() {
+            idleTime = idleTime + 1;
+            if (idleTime > 15) {
+                showNotification("Inactivité détectée", "warning");
+                setTimeout(logout, 1500);
+            }
+        }
+        document.body.addEventListener('mousemove', () => idleTime = 0);
+        document.body.addEventListener('keypress', () => idleTime = 0);
+        setInterval(timerIncrement, 60000);
+
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        async function loadCasinoHistory() {
+            const container = document.getElementById('panel-sadmin-casino');
+            container.innerHTML = '<div class="text-center p-3 text-emerald fw-bold" style="font-size: 0.7rem;">Chargement... ⏳</div>';
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/casino-history`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const history = await res.json();
+                    if (history.length === 0) {
+                        container.innerHTML = '<div class="card-mini p-4 text-center text-secondary"><i class="fa-solid fa-ghost fs-3 mb-2"></i><br><span class="fw-bold text-uppercase" style="font-size: 0.7rem;">Aucun pari enregistré.</span></div>';
+                        return;
+                    }
+                    let html = `<div class="d-flex flex-column gap-1 overflow-y-auto" style="max-height: 380px;">`;
+                    history.forEach(t => {
+                        const isWin = t.action === 'win';
+                        const badgeColor = isWin ? 'text-success' : 'text-danger';
+                        const sign = isWin ? '+' : '-';
+                        html += `
+                        <div class="bg-black border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                            <div><div class="text-white fw-bold">👤 ${escapeHTML(t.username)}</div><div class="text-secondary font-mono" style="font-size: 0.6rem;">🕒 ${t.date}</div></div>
+                            <div class="text-end font-mono"><div class="${badgeColor} fw-bold" style="font-size: 0.75rem;">${sign}${parseFloat(t.amount).toFixed(2)} TND</div></div>
+                        </div>`;
+                    });
+                    container.innerHTML = html + `</div>`;
+                } else container.innerHTML = '<div class="text-center p-3 text-danger">Erreur API</div>';
+            } catch (e) { container.innerHTML = '<div class="text-center p-3 text-danger">Erreur de connexion</div>'; }
+        }
+
+        async function loadTransferts() {
+            const container = document.getElementById('panel-sadmin-transfert');
+            container.innerHTML = '<div class="text-center p-3 text-emerald fw-bold" style="font-size: 0.7rem;">Chargement... ⏳</div>';
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/get-pending-deposits`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const tickets = await res.json();
+                    if (tickets.length === 0) {
+                        container.innerHTML = '<div class="card-mini p-4 text-center text-secondary"><i class="fa-solid fa-money-bill-transfer fs-3 mb-2"></i><br><span class="fw-bold text-uppercase" style="font-size: 0.7rem;">Aucun transfert financier trouvé.</span></div>';
+                        return;
+                    }
+                    let html = `<div class="d-flex flex-column gap-1 overflow-y-auto" style="max-height: 380px;">`;
+                    tickets.forEach(t => {
+                        html += `
+                        <div class="bg-black border border-warning rounded-2 p-2 d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                            <div><div class="text-white fw-bold">👤 ${escapeHTML(t.username || t.player)}</div><div class="text-secondary font-mono" style="font-size: 0.6rem;">Code: ${escapeHTML(t.code || t.reference)}</div></div>
+                            <div class="text-warning fw-bold font-mono">En attente</div>
+                        </div>`;
+                    });
+                    container.innerHTML = html + `</div>`;
+                } else container.innerHTML = '<div class="text-center p-3 text-danger">Erreur API</div>';
+            } catch (e) { container.innerHTML = '<div class="text-center p-3 text-danger">Erreur de connexion</div>'; }
+        }
+    </script>
+</body>
+</html>

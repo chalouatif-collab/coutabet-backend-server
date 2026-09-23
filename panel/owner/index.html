@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha Bet - Mini Owner Centre</title>
+
+    <!-- Bootstrap 5 & Confetti & FontAwesome & Google Fonts -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --red-primary: #dc2626;
+            --red-hover: #b91c1c;
+            --bg-main: #020617;
+            --bg-sidebar: #070d1a;
+            --bg-card: #0b1329;
+            --bg-input: #020617;
+            --border-dark: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: #e2e8f0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.8rem;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* كاردز مصغرة ومرتبة */
+        .card-mini {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .text-owner {
+            color: var(--red-primary) !important;
+        }
+
+        /* أزرار صغيرة وعملية */
+        .btn-mini {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 0.35rem;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-owner-mini {
+            background-color: var(--red-primary);
+            color: white;
+        }
+
+        .btn-owner-mini:hover {
+            background-color: var(--red-hover);
+            color: white;
+        }
+
+        /* حقول إدخال مصغرة */
+        .form-control-mini,
+        .form-select-mini {
+            background-color: var(--bg-input) !important;
+            border: 1px solid var(--border-dark) !important;
+            color: #ffffff !important;
+            font-family: 'JetBrains Mono', monospace;
+            border-radius: 0.35rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .form-control-mini:focus,
+        .form-select-mini:focus {
+            border-color: var(--red-primary) !important;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+        }
+
+        /* القائمة الجانبية المصغرة */
+        .sidebar-link-mini {
+            color: #cbd5e1;
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-dark);
+            border-radius: 0.4rem;
+            padding: 0.4rem 0.6rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .sidebar-link-mini:hover {
+            background-color: var(--border-dark);
+            color: #fff;
+        }
+
+        .offcanvas {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-dark);
+            width: 260px !important;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        input[type=range] {
+            accent-color: var(--red-primary);
+            height: 4px;
+        }
+
+        .user-row-mini {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-dark);
+            border-radius: 0.4rem;
+            padding: 0.35rem 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .user-row-mini:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--red-primary);
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--red-primary) !important;
+            color: white !important;
+            border: 1px solid var(--red-primary);
+        }
+
+        .nav-pills .nav-link {
+            color: #cbd5e1;
+            border: 1px solid var(--border-dark);
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column flex-md-row min-vh-100 position-relative">
+
+    <!-- حاوية الإشعارات المصغرة -->
+    <div id="toast-container" class="position-fixed bottom-0 end-0 p-2"
+        style="z-index: 1090; max-width: 300px; width: 100%;"></div>
+
+    <!-- القائمة الجانبية (Offcanvas) -->
+    <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="sidebar-menu">
+        <div class="offcanvas-header border-bottom border-dark px-3 py-2">
+            <h6 class="offcanvas-title text-owner fw-bold" style="font-size: 0.85rem;"><i class="fa-solid fa-crown"></i>
+                ALPHA OWNER</h6>
+            <button type="button" class="btn-close btn-close-white btn-sm shadow-none"
+                data-bs-dismiss="offcanvas"></button>
+        </div>
+
+        <div class="offcanvas-body d-flex flex-column p-2.5">
+            <div
+                class="d-flex align-items-center justify-content-between mb-2 border border-dark p-1.5 rounded-2 bg-black">
+                <span class="text-secondary" style="font-size: 0.7rem;">🌐 Lang:</span>
+                <select id="lang-select" onchange="changeLanguage(this.value)"
+                    class="form-select form-select-mini bg-transparent text-white border-0 w-auto fw-bold shadow-none py-0">
+                    <option value="fr">Français</option>
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+
+            <div class="text-secondary fw-bold text-uppercase mb-1" style="font-size: 0.65rem; letter-spacing: 1px;"
+                id="menu-title">Menu</div>
+
+            <nav class="d-flex flex-column gap-1 flex-grow-1">
+                <button onclick="fetchAndOpenHistory('casino')" class="sidebar-link-mini"><i
+                        class="fa-solid fa-dice text-danger"></i> Casino</button>
+                <button onclick="fetchAndOpenHistory('transfert')" class="sidebar-link-mini"><i
+                        class="fa-solid fa-right-left text-success"></i> Transferts</button>
+                <button onclick="fetchAndOpenHistory('sport')" class="sidebar-link-mini"><i
+                        class="fa-solid fa-futbol text-warning"></i> Sport</button>
+                <button onclick="fetchAndOpenHistory('compte')" class="sidebar-link-mini"><i
+                        class="fa-solid fa-chart-pie text-info"></i> Stats</button>
+                <button onclick="openPasswordModal()" class="sidebar-link-mini"><i
+                        class="fa-solid fa-key text-secondary"></i> Password</button>
+                <button onclick="fetchAndOpenHistory('audit')" class="sidebar-link-mini"><i
+                        class="fa-solid fa-file-alt text-muted"></i> Audit Logs</button>
+
+                <div class="my-1 border-top border-dark"></div>
+
+                <button onclick="fetchAndOpenHistory('pending')" class="sidebar-link-mini text-warning">
+                    <i class="fa-solid fa-bell"></i> Dépôts en attente
+                </button>
+                <button onclick="fetchAndOpenHistory('withdrawals')" class="sidebar-link-mini text-danger">
+                    <i class="fa-solid fa-wallet"></i> Retraits en attente
+                </button>
+                <button onclick="showResettlementPanel()" class="sidebar-link-mini text-owner fw-bold"
+                    data-bs-dismiss="offcanvas">
+                    <i class="fas fa-tools"></i> Correction Tickets
+                </button>
+            </nav>
+
+            <button onclick="logout()" id="btn-logout" class="btn btn-sm btn-outline-danger w-100 fw-bold py-1 mt-2"
+                style="font-size: 0.75rem;">
+                🚪 Déconnexion
+            </button>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="flex-grow-1 d-flex flex-column position-relative w-100">
+
+        <!-- الهيدر العلوي المصغر -->
+        <header
+            class="card-mini border-bottom border-dark px-3 py-1.5 d-flex justify-content-between align-items-center sticky-top rounded-0">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-dark btn-sm border border-dark text-white px-2 py-1 rounded-2 shadow-none"
+                    type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-menu" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <span class="fw-bold text-owner tracking-wide d-none d-md-inline" style="font-size: 0.8rem;">ALPHA <span
+                        class="text-white fw-light">OWNER</span></span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button id="audio-enable-btn" onclick="enableAudio()" class="btn btn-mini btn-outline-warning py-0 px-2"
+                    style="font-size: 0.65rem;">🔊 الصوت</button>
+                <span class="badge bg-danger bg-opacity-25 text-owner border border-danger px-2 py-0.5"
+                    style="font-size: 0.65rem;" id="badge-role">Owner</span>
+                <span class="fw-bold text-white font-mono small" id="owner-username"
+                    style="font-size: 0.75rem;">fethi</span>
+            </div>
+        </header>
+
+        <!-- مساحة العمل المضغوطة -->
+        <main class="flex-grow-1 overflow-y-auto p-2 no-scrollbar mx-auto w-100" style="max-width: 900px;"
+            id="main-content">
+
+            <div class="d-flex flex-column gap-2" id="default-dashboard-view">
+
+                <!-- شريط أزرار التبويبات المتجاوب -->
+                <ul class="nav nav-pills justify-content-center gap-1 mb-1 bg-black p-1.5 rounded-3 border border-dark flex-nowrap overflow-x-auto no-scrollbar"
+                    id="ownerTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active btn-sm font-mono fw-bold px-3 py-1 text-nowrap" id="network-tab"
+                            data-bs-toggle="tab" data-bs-target="#network" type="button" role="tab"
+                            style="font-size: 0.75rem;">👥 الإدارة والشبكة</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link btn-sm font-mono fw-bold px-3 py-1 text-info text-nowrap"
+                            id="marketing-tab" data-bs-toggle="tab" data-bs-target="#marketing" type="button" role="tab"
+                            style="font-size: 0.75rem;">🎁 التسويق</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link btn-sm font-mono fw-bold px-3 py-1 text-warning text-nowrap"
+                            id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab"
+                            style="font-size: 0.75rem;">🛡️ الأمان والتحليل</button>
+                    </li>
+                </ul>
+
+                <!-- محتوى التبويبات -->
+                <div class="tab-content w-100 mt-2" id="ownerTabsContent">
+
+                    <!-- ================= 1. تبويب الإدارة والشبكة ================= -->
+                    <div class="tab-pane fade show active" id="network" role="tabpanel">
+                        <div class="d-flex flex-column gap-2">
+
+                            <!-- شريط التحكم بالمستخدم المحدد -->
+                            <section class="card-mini">
+                                <div class="row g-1 align-items-center">
+                                    <div class="col-12 col-md-4">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-black border-dark text-secondary py-0 px-2"
+                                                style="font-size: 0.65rem;" id="lbl-selected-user">المحدد:</span>
+                                            <input type="text" id="ctrl-target-user"
+                                                class="form-control form-control-mini text-owner fw-bold font-mono text-center py-0"
+                                                placeholder="Sélectionnez..." readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-5">
+                                        <div
+                                            class="d-flex align-items-center gap-2 px-2 bg-black border border-dark rounded-2 py-1">
+                                            <span class="text-secondary font-mono small fw-bold"
+                                                style="font-size: 0.65rem;">RTP:<span id="rtp-val-label"
+                                                    class="text-white ms-1">50%</span></span>
+                                            <input type="range" id="ctrl-rtp-range" min="1" max="99" value="50"
+                                                oninput="document.getElementById('rtp-val-label').innerText = this.value + '%'"
+                                                class="form-range flex-grow-1 m-0">
+                                            <button onclick="saveRtpAndBlock(0)"
+                                                class="btn btn-mini btn-success py-0 px-2">حفظ</button>
+                                            <button onclick="saveRtpAndBlock(1)"
+                                                class="btn btn-mini btn-warning text-dark py-0 px-2">حظر</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <button onclick="deleteAccountAction()"
+                                            class="btn btn-mini btn-outline-danger w-100 py-1"
+                                            style="font-size: 0.7rem;">
+                                            <i class="fa-solid fa-trash-can"></i> حذف الحساب
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- سكشن إنشاء حساب جديد -->
+                            <section class="card-mini border-start border-danger border-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold text-white" style="font-size: 0.75rem;"
+                                        id="title-create-user">👑 إنشاء حساب جديد</span>
+                                </div>
+                                <div class="row g-1 align-items-center">
+                                    <div class="col-6 col-md-3">
+                                        <input type="text" id="new-user-name"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="Username">
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <input type="password" id="new-user-pass"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="Password">
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <select id="new-user-role"
+                                            class="form-select form-select-mini font-mono py-0.5">
+                                            <option value="owner">Owner</option>
+                                            <option value="manager">Manager</option>
+                                            <option value="super_admin">Super Admin</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="shop">Shop</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <input type="text" id="new_phone"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="Phone">
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <button onclick="createNetworkUser()"
+                                            class="btn btn-mini btn-owner-mini w-100 py-1"
+                                            id="btn-create">Créer</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- العمليات المالية المصغرة (Console) -->
+                            <section class="card-mini">
+                                <div
+                                    class="d-flex justify-content-between align-items-center border-bottom border-dark pb-1 mb-1">
+                                    <span class="fw-bold text-white small" id="title-table-console"
+                                        style="font-size: 0.7rem;">📋 Console financière</span>
+                                </div>
+                                <div class="row g-1 mb-1 align-items-center">
+                                    <div class="col-3">
+                                        <input type="text" id="target-action-user" readonly placeholder="Compte"
+                                            class="form-control form-control-mini text-center text-owner fw-bold font-mono py-1">
+                                    </div>
+                                    <div class="col-3">
+                                        <input type="number" id="target-action-amount" placeholder="TND"
+                                            class="form-control form-control-mini text-center font-mono py-1">
+                                    </div>
+                                    <div class="col-3">
+                                        <button onclick="executeAction('charge')" id="btn-credit"
+                                            class="btn btn-mini btn-success w-100 text-dark py-1">Créditer</button>
+                                    </div>
+                                    <div class="col-3">
+                                        <button onclick="executeAction('withdraw')" id="btn-retirer"
+                                            class="btn btn-mini btn-danger w-100 py-1">Retirer</button>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-1 pt-1 border-top border-dark align-items-center">
+                                    <input type="password" id="ctrl-user-new-pass" placeholder="كلمة سر جديدة"
+                                        class="form-control form-control-mini font-mono text-center flex-grow-1 py-1"
+                                        dir="rtl">
+                                    <button onclick="changeUserPasswordFromOwner()"
+                                        class="btn btn-mini btn-info text-dark fw-bold px-2 py-1"
+                                        style="font-size: 0.7rem;">تغيير السر</button>
+                                    <button onclick="resetUser2FA()"
+                                        class="btn btn-mini btn-warning text-dark fw-bold px-2 py-1"
+                                        style="font-size: 0.7rem;" title="إعادة تعيين 2FA"><i
+                                            class="fa-solid fa-key"></i> 2FA</button>
+                                </div>
+                            </section>
+
+                            <!-- قائمة المستخدمين (أسفل التبويب الأول دائماً) -->
+                            <section class="card-mini p-0 overflow-hidden">
+                                <div class="p-1.5 border-bottom border-dark bg-black">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-transparent border-0 text-secondary py-0 px-2"
+                                            style="font-size: 0.7rem;"><i
+                                                class="fa-solid fa-magnifying-glass"></i></span>
+                                        <input type="text" id="search-input" oninput="renderFilteredUsers()"
+                                            placeholder="Rechercher un compte..."
+                                            class="form-control form-control-mini border-dark py-1">
+                                    </div>
+                                </div>
+                                <div id="owner-network-tbody" class="p-1.5 d-flex flex-column gap-1"
+                                    style="max-height: 400px; overflow-y: auto;">
+                                    <!-- يتم حقن الحسابات هنا -->
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <!-- ================= 2. تبويب التسويق ================= -->
+                    <div class="tab-pane fade" id="marketing" role="tabpanel">
+                        <div class="d-flex flex-column gap-2">
+                            <!-- لوحة إرسال الإشعارات (إضافة في تبويب التسويق) -->
+                            <section class="card-mini border-start border-purple-500 border-3 mt-2">
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-1 bg-black p-1 rounded">
+                                    <span class="fw-bold text-purple-400 small" style="font-size: 0.75rem;"><i
+                                            class="fa-solid fa-bullhorn"></i> 📢 إرسال إشعار مباشر</span>
+                                </div>
+                                <div class="row g-1 align-items-center mt-1">
+                                    <div class="col-12 col-md-3">
+                                        <input type="text" id="notif-target"
+                                            class="form-control form-control-mini text-center"
+                                            placeholder="اسم اللاعب (أو اكتب all للجميع)" value="all">
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <input type="text" id="notif-title" class="form-control form-control-mini"
+                                            placeholder="العنوان (مثال: مسابقة جديدة!)">
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <input type="text" id="notif-msg" class="form-control form-control-mini"
+                                            placeholder="نص الإشعار...">
+                                    </div>
+                                    <div class="col-12 col-md-2">
+                                        <button onclick="sendPushNotification()" id="btn-send-notif"
+                                            class="btn btn-mini btn-purple w-100 py-1 fw-bold bg-purple-600 text-white">إرسال
+                                            🚀</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- قسم إرسال اللفات المجانية (اليدوي) -->
+                            <section class="card-mini border-start border-info border-3">
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-1 bg-black p-1 rounded">
+                                    <span class="fw-bold text-info small" style="font-size: 0.75rem;"><i
+                                            class="fa-solid fa-gift"></i> 🎁 إرسال لفات مجانية (Free Spins)</span>
+                                </div>
+                                <div class="row g-1 align-items-center mt-1">
+                                    <div class="col-6 col-md-2">
+                                        <input type="text" id="fs-target-user"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="اللاعب" readonly>
+                                    </div>
+                                    <div class="col-6 col-md-2">
+                                        <select id="fs-provider" class="form-select form-select-mini font-mono py-0.5">
+                                            <option value="PRAGMATIC">Pragmatic</option>
+                                            <option value="NETENT">NetEnt</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 col-md-2">
+                                        <input type="text" id="fs-game-code"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="كود اللعبة (مثال: vs20doghouse)">
+                                    </div>
+                                    <div class="col-3 col-md-1">
+                                        <input type="number" id="fs-spin-count"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="اللفات" value="10">
+                                    </div>
+                                    <div class="col-3 col-md-1">
+                                        <input type="number" id="fs-bet"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="الرهان" value="0.20" step="0.10">
+                                    </div>
+                                    <div class="col-6 col-md-2">
+                                        <input type="number" id="fs-amount"
+                                            class="form-control form-control-mini font-mono text-center"
+                                            placeholder="أقصى ربح" value="1000">
+                                    </div>
+                                    <div class="col-12 col-md-2 mt-1 mt-md-0">
+                                        <button onclick="sendFreeSpins()" id="btn-send-fs"
+                                            class="btn btn-mini btn-info w-100 py-1 text-dark fw-bold">إرسال
+                                            الآن</button>
+                                    </div>
+                                </div>
+                                <div class="row g-1 align-items-center mt-2 border-top border-dark pt-2">
+                                    <div class="col-8 col-md-10">
+                                        <input type="text" id="fs-cancel-tour-id"
+                                            class="form-control form-control-mini font-mono"
+                                            placeholder="رقم الجولة (Tour ID) لإلغائها واسترجاع الرصيد...">
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <button onclick="cancelFreeSpins()" id="btn-cancel-fs"
+                                            class="btn btn-mini btn-outline-danger w-100 py-1 fw-bold">إلغاء
+                                            الجولة</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- نظام العروض الآلية -->
+                            <section class="card-mini border-start border-success border-3">
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-1 bg-black p-1 rounded">
+                                    <span class="fw-bold text-success small" style="font-size: 0.75rem;"><i
+                                            class="fa-solid fa-robot"></i> 🤖 نظام العروض الآلي (الشحن = لفات)</span>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" id="promo-active">
+                                        <label class="form-check-label text-white small" for="promo-active">تفعيل
+                                            العرض</label>
+                                    </div>
+                                </div>
+                                <!-- السطر الأول: الإعدادات -->
+                                <div class="row g-1 align-items-end mt-1 text-center font-mono"
+                                    style="font-size: 0.7rem;">
+                                    <div class="col-4 col-md-2">
+                                        <label class="text-secondary d-block mb-1">يوم العرض</label>
+                                        <select id="promo-day" class="form-select form-select-mini py-0.5">
+                                            <option value="Monday">الإثنين</option>
+                                            <option value="Tuesday">الثلاثاء</option>
+                                            <option value="Wednesday">الأربعاء</option>
+                                            <option value="Thursday">الخميس</option>
+                                            <option value="Friday">الجمعة</option>
+                                            <option value="Saturday">السبت</option>
+                                            <option value="Sunday">الأحد</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <label class="text-secondary d-block mb-1">شحن (Min)</label>
+                                        <input type="number" id="promo-min"
+                                            class="form-control form-control-mini text-center" value="50">
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <label class="text-secondary d-block mb-1">عدد اللفات</label>
+                                        <input type="number" id="promo-spins"
+                                            class="form-control form-control-mini text-center" value="10">
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <label class="text-secondary d-block mb-1">الرهان</label>
+                                        <input type="number" id="promo-bet"
+                                            class="form-control form-control-mini text-center" value="0.20" step="0.10">
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <label class="text-secondary d-block mb-1">أقصى ربح</label>
+                                        <input type="number" id="promo-maxwin"
+                                            class="form-control form-control-mini text-center" value="1000">
+                                    </div>
+                                    <div class="col-4 col-md-2">
+                                        <label class="text-secondary d-block mb-1">المزود</label>
+                                        <select id="promo-provider" class="form-select form-select-mini py-0.5">
+                                            <option value="PRAGMATIC">Pragmatic</option>
+                                            <option value="NETENT">NetEnt</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- السطر الثاني: كود اللعبة وزر الحفظ -->
+                                <div class="row g-1 align-items-center mt-2">
+                                    <div class="col-8 col-md-9">
+                                        <input type="text" id="promo-game"
+                                            class="form-control form-control-mini text-center font-mono"
+                                            value="vs20doghouse" placeholder="كود اللعبة (مثال: vs20doghouse)">
+                                    </div>
+                                    <div class="col-4 col-md-3">
+                                        <button onclick="savePromoConfig()"
+                                            class="btn btn-mini btn-success w-100 py-1 fw-bold text-dark">حفظ النظام
+                                            الآلي</button>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <!-- ================= 3. تبويب الأمان والتحليل ================= -->
+                    <div class="tab-pane fade" id="security" role="tabpanel">
+                        <div class="d-flex flex-column gap-2">
+
+                            <!-- جدار الأرباح الضخمة -->
+                            <section class="card-mini border-start border-warning border-3" id="huge-wins-section">
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-1 bg-black p-1 rounded">
+                                    <span class="fw-bold text-warning small" style="font-size: 0.75rem;"><i
+                                            class="fa-solid fa-triangle-exclamation"></i> 🚨 Pas de gains</span>
+                                    <button onclick="fetchHugeWins()"
+                                        class="btn btn-mini btn-outline-warning py-0 px-2">🔄 Mise à jour</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="w-full text-white w-100" style="font-size: 0.7rem;">
+                                        <tbody id="huge-wins-tbody" class="d-flex flex-column gap-1 mt-1">
+                                            <!-- سيتم جلب الأرباح هنا -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            <!-- أداة كشف الاحتيال -->
+                            <section class="card-mini border-start border-danger border-3">
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-1 bg-black p-1 rounded">
+                                    <span class="fw-bold text-danger small" style="font-size: 0.75rem;"><i
+                                            class="fa-solid fa-user-shield"></i> 🛡️ كشف الاحتيال (Anti-Fraud)</span>
+                                    <button onclick="fetchFraudData()"
+                                        class="btn btn-mini btn-outline-danger py-0 px-2">🔍 فحص الشبكة</button>
+                                </div>
+                                <div id="fraud-results-container" class="text-white small p-1 font-mono"
+                                    style="font-size: 0.7rem; max-height: 150px; overflow-y: auto;">
+                                    <span class="text-secondary">اضغط على زر "فحص الشبكة" لكشف الحسابات المرتبطة بنفس
+                                        عنوان الـ IP أو الهاتف...</span>
+                                </div>
+                            </section>
+
+                            <!-- تحليلات الإيرادات الصافية (GGR Analytics) -->
+                            <section class="card-mini border-start border-warning border-3">
+                                <div
+                                    class="d-flex justify-content-between align-items-center mb-1 bg-black p-1 rounded">
+                                    <span class="fw-bold text-warning small" style="font-size: 0.75rem;"><i
+                                            class="fa-solid fa-chart-line"></i> 📊 تحليلات الإيرادات الصافية
+                                        (GGR)</span>
+                                    <div class="d-flex gap-1 align-items-center">
+                                        <select id="ggr-month" class="form-select form-select-mini py-0 px-1 font-mono"
+                                            style="font-size: 0.65rem; width: 85px;">
+                                            <option value="">كل الأشهر</option>
+                                            <option value="1">جانفي (1)</option>
+                                            <option value="2">فيفري (2)</option>
+                                            <option value="3">مارس (3)</option>
+                                            <option value="4">أفريل (4)</option>
+                                            <option value="5">ماي (5)</option>
+                                            <option value="6">جوان (6)</option>
+                                            <option value="7">جويلية (7)</option>
+                                            <option value="8">أوت (8)</option>
+                                            <option value="9">سبتمبر (9)</option>
+                                            <option value="10">أكتوبر (10)</option>
+                                            <option value="11">نوفمبر (11)</option>
+                                            <option value="12">ديسمبر (12)</option>
+                                        </select>
+                                        <select id="ggr-year" class="form-select form-select-mini py-0 px-1 font-mono"
+                                            style="font-size: 0.65rem; width: 70px;">
+                                            <option value="2026">2026</option>
+                                            <option value="2025">2025</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                        <button onclick="fetchGGRAnalytics()"
+                                            class="btn btn-mini btn-outline-warning py-0 px-2"
+                                            style="font-size: 0.65rem;">🔍 تصفية</button>
+                                    </div>
+                                </div>
+                                <div class="row g-1 text-center font-mono mt-1" style="font-size: 0.7rem;">
+                                    <div class="col-3 bg-dark p-1 rounded border border-secondary">
+                                        <span class="text-secondary d-block" style="font-size: 0.60rem;">إجمالي
+                                            الرهانات</span>
+                                        <span id="ggr-bets" class="fw-bold text-white">0.00 TND</span>
+                                    </div>
+                                    <div class="col-3 bg-dark p-1 rounded border border-secondary">
+                                        <span class="text-secondary d-block" style="font-size: 0.60rem;">أرباح
+                                            اللاعبين</span>
+                                        <span id="ggr-wins" class="fw-bold text-info">0.00 TND</span>
+                                    </div>
+                                    <div class="col-3 bg-dark p-1 rounded border border-secondary">
+                                        <span class="text-secondary d-block" style="font-size: 0.60rem;">الصافي
+                                            (GGR)</span>
+                                        <span id="ggr-profit" class="fw-bold text-success">0.00 TND</span>
+                                    </div>
+                                    <div class="col-3 bg-dark p-1 rounded border border-secondary">
+                                        <span class="text-secondary d-block" style="font-size: 0.60rem;">نسبة العائد
+                                            RTP</span>
+                                        <span id="ggr-rtp" class="fw-bold text-warning">0.0%</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ================= واجهة تصحيح التذاكر (مضغوطة) ================= -->
+    <div id="admin-resettlement-panel" class="d-none">
+        <button onclick="hideResettlementPanel()" class="btn btn-mini btn-outline-secondary mb-2"><i
+                class="fa-solid fa-arrow-left"></i> Retour</button>
+
+        <div class="card-mini p-3">
+            <h6 class="text-white fw-bold mb-1" style="font-size: 0.8rem;"><i class="fas fa-tools text-owner"></i>
+                Correction des Tickets</h6>
+            <p class="text-secondary mb-2" style="font-size: 0.65rem;">Recherchez un ticket par son ID.</p>
+
+            <div class="input-group input-group-sm mb-2">
+                <input type="text" id="ticket-search-input" class="form-control form-control-mini"
+                    placeholder="ID du Ticket">
+                <button class="btn btn-mini btn-owner-mini px-3" onclick="searchTicket()"><i
+                        class="fas fa-search"></i></button>
+            </div>
+
+            <div id="ticket-details-section" class="d-none">
+                <div class="bg-black rounded-2 p-2 border border-dark mb-2 d-flex justify-content-between flex-wrap gap-1 text-center font-mono"
+                    style="font-size: 0.65rem;">
+                    <div><span class="text-secondary d-block">ID</span><span
+                            class="text-white fw-bold">#TCK-98765</span></div>
+                    <div><span class="text-secondary d-block">Joueur</span><span
+                            class="text-white fw-bold">Karim***</span></div>
+                    <div><span class="text-secondary d-block">Mise</span><span class="text-white fw-bold">50 TND</span>
+                    </div>
+                    <div><span class="text-secondary d-block">Gain</span><span class="text-success fw-bold">450
+                            TND</span></div>
+                </div>
+
+                <div class="d-flex flex-column gap-1 mb-2">
+                    <div
+                        class="bg-black border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center gap-2">
+                        <div>
+                            <span class="text-owner fw-bold d-block" style="font-size: 0.6rem;">Football</span>
+                            <p class="text-white fw-bold mb-0" style="font-size: 0.75rem;">Real Madrid vs Man City</p>
+                        </div>
+                        <select class="form-select form-select-mini w-auto font-mono py-0">
+                            <option value="won" selected>Gagné ✅</option>
+                            <option value="lost">Perdu ❌</option>
+                            <option value="void">Annulé 🔄</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="resettleTicket()" class="btn btn-mini btn-success w-100 fw-bold py-1.5"><i
+                        class="fas fa-check-circle"></i> Soumettre</button>
+            </div>
+
+            <div class="mt-2 border-top border-dark pt-2">
+                <h6 class="text-white fw-bold mb-1" style="font-size: 0.75rem;">📜 Derniers Tickets</h6>
+                <div id="all-tickets-list" class="d-flex flex-column gap-1"
+                    style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+    </main>
+    </div>
+
+    <!-- نافذة السجلات (Modal) -->
+    <div class="modal fade" id="historyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content card-mini border-dark text-white shadow">
+                <div class="modal-header border-bottom border-dark py-1.5 px-3">
+                    <h6 class="modal-title fw-bold text-owner" style="font-size: 0.8rem;" id="modal-title">Historique
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white btn-sm shadow-none"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-2.5" id="modal-dynamic-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل كلمة السر -->
+    <div class="modal fade" id="passwordModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content card-mini border-dark text-white shadow">
+                <div class="modal-header border-bottom border-dark py-1.5 px-3">
+                    <h6 class="modal-title fw-bold" style="font-size: 0.75rem;">🔑 Modifier le mot de passe</h6>
+                    <button type="button" class="btn-close btn-close-white btn-sm shadow-none"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-2">
+                    <input type="password" id="new-sys-pass" placeholder="Nouveau mot de passe"
+                        class="form-control form-control-mini mb-2 font-mono text-center">
+                    <button onclick="submitNewPassword()" class="btn btn-mini btn-owner-mini w-100 fw-bold py-1">Mettre
+                        à jour</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let isTransactionRunning = false;
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.toString().replace(/[&<>'"]/g,
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        const BACKEND_URL = "https://alpha-backend-server.onrender.com";
+
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/owner-login';
+
+        let allUsers = [];
+        let allTransactionsCache = [];
+        let sessionData = localStorage.getItem('alpha_user');
+        let user = sessionData ? JSON.parse(sessionData) : null;
+
+        if (!user || user.role !== 'owner') {
+            localStorage.clear();
+            window.location.href = '/owner-login';
+        }
+
+        let secureSelectedUser = "";
+
+        function getAuthHeaders() {
+            return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('owner-username');
+            if (el) el.innerText = user.username;
+            loadNetworkData();
+            fetchAllTickets();
+        });
+
+        const translations = {
+            fr: { menu: "Menu", selected: "Sélection:", create: "👑 Créer un compte", user: "Nom d'utilisateur", pass: "Mot de passe", console: "📋 Console financière", credit: "Créditer", retirer: "Retirer", out: "Déconnexion" },
+            ar: { menu: "القائمة", selected: "المحدد:", create: "👑 إنشاء حساب جديد", user: "اسم المستخدم", pass: "كلمة المرور", console: "📋 لوحة التحكم المالي", credit: "شحن رصيد", retirer: "سحب", out: "تسجيل الخروج" },
+            en: { menu: "Menu", selected: "Selected:", create: "👑 Create Account", user: "Username", pass: "Password", console: "📋 Financial Console", credit: "Charge", retirer: "Withdraw", out: "Logout" }
+        };
+
+        function changeLanguage(lang) {
+            document.body.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+            document.getElementById('menu-title').innerText = translations[lang].menu;
+            document.getElementById('lbl-selected-user').innerText = translations[lang].selected;
+            document.getElementById('title-create-user').innerText = translations[lang].create;
+            document.getElementById('title-table-console').innerText = translations[lang].console;
+            document.getElementById('btn-credit').innerText = translations[lang].credit;
+            document.getElementById('btn-retirer').innerText = translations[lang].retirer;
+            document.getElementById('btn-logout').innerHTML = `🚪 ${translations[lang].out}`;
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toastEl = document.createElement('div');
+            const icon = type === 'success' ? '✅' : '❌';
+
+            // 🛡️ تعقيم الرسالة قبل عرضها
+            const safeMessage = typeof message === 'string' ? escapeHTML(message) : message;
+
+            toastEl.className = `toast align-items-center text-white border-0 mb-1 show shadow`;
+            toastEl.innerHTML = `
+                <div class="d-flex ${type === 'success' ? 'border-success' : 'border-danger'} border-start border-3 rounded-2" style="background-color: var(--bg-card);">
+                    <div class="toast-body fw-bold d-flex gap-2 align-items-center py-2" style="font-size: 0.7rem; color: white;">
+                        <span>${icon}</span> ${safeMessage}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto shadow-none btn-sm" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            container.appendChild(toastEl);
+            setTimeout(() => { toastEl.remove(); }, 3000);
+        }
+
+        async function loadNetworkData() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/users?t=${Date.now()}`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    allUsers = await res.json();
+                    renderFilteredUsers();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function resetUser2FA() {
+            const target = secureSelectedUser;
+            if (!target) return showNotification('الرجاء تحديد حساب أولاً!', 'error');
+
+            if (!confirm(`هل أنت متأكد من إعادة تعيين مفتاح 2FA للحساب: ${target}؟ سيتم إلغاء المفتاح القديم ولن يتمكن من الدخول به.`)) return;
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/reset-2fa`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ admin_username: user.username, target_username: target })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    // عرض المفتاح الجديد في نافذة Prompt ليتمكن المدير من نسخه بسهولة
+                    prompt(`تم إعادة تعيين 2FA بنجاح للحساب ${target}.\n\nانسخ هذا المفتاح وأرسله للمستخدم فوراً (لن يظهر مرة أخرى):`, data.new_secret);
+                    showNotification('تم إعادة تعيين المفتاح!', 'success');
+                } else {
+                    showNotification(data.detail || 'Erreur', 'error');
+                }
+            } catch (e) {
+                showNotification('Erreur de connexion', 'error');
+            }
+        }
+
+        function renderUsers(data) {
+            const container = document.getElementById('owner-network-tbody');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="text-center text-secondary p-2" style="font-size: 0.7rem;">لا توجد حسابات</div>`;
+                return;
+            }
+
+            const displayData = data.slice(0, 100);
+
+            displayData.forEach(u => {
+                const userRtp = u.rtp || 50;
+                const balance = parseFloat(u.balance || 0);
+
+                const usernameClean = escapeHTML(u.username || 'Inconnu');
+                const createdByClean = escapeHTML(u.created_by || 'System');
+                const userRole = u.role ? u.role.toUpperCase() : 'PLAYER';
+                const statusDot = u.is_blocked === 1 ? 'bg-danger' : 'bg-success';
+
+                const safeSecret = escapeHTML(u.two_factor_secret || '');
+                const secretBadge = safeSecret
+                    ? `<div class="d-inline-flex align-items-center bg-black border border-dark rounded px-1 ms-1" onclick="event.stopPropagation()">
+                       <i class="fa-solid fa-key text-success me-1" style="font-size: 0.55rem;"></i>
+                       <input type="text" value="${safeSecret}" class="bg-transparent border-0 text-warning font-mono p-0 text-center" style="width: 60px; font-size: 0.6rem; outline: none;" readonly>
+                       <button onclick="copySecretCode('${safeSecret}', event)" class="btn btn-sm btn-link text-success p-0 ms-1 shadow-none" style="font-size: 0.6rem;">
+                           <i class="fa-regular fa-copy"></i>
+                       </button>
+                   </div>`
+                    : ``;
+
+                const safePhone = escapeHTML(u.phone || '');
+                const phoneBadge = safePhone !== ""
+                    ? `<span class="badge bg-black text-info border border-dark ms-1 px-1 py-0" style="font-size: 0.6rem;"><i class="fa-solid fa-phone"></i> ${safePhone}</span>`
+                    : ``;
+
+                container.innerHTML += `
+                <div class="user-row-mini d-flex justify-content-between align-items-center" onclick="selectForControl('${usernameClean}', ${userRtp})">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="position-relative bg-black rounded-circle d-flex justify-content-center align-items-center border border-dark" style="width: 24px; height: 24px;">
+                            <i class="fa-solid fa-user text-secondary" style="font-size: 9px;"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 ${statusDot} border border-dark rounded-circle"></span>
+                        </div>
+                        <div>
+                            <div class="text-white fw-bold mb-0 d-flex align-items-center flex-wrap gap-1" style="font-size: 0.75rem;">
+                                ${usernameClean} 
+                                <span class="badge bg-dark border border-dark text-secondary font-mono" style="font-size: 0.6rem; padding: 1px 3px;">ID: ${u.id || 'N/A'}</span>
+                                ${secretBadge} ${phoneBadge}
+                            </div>
+                            <div class="text-info font-mono" style="font-size: 0.6rem;">${userRole} • By: ${createdByClean}</div>
+                        </div>
+                    </div>
+                    <div class="text-end font-mono">
+                        <div class="text-white fw-bold" style="font-size: 0.75rem;">${balance.toFixed(2)} TND</div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function renderFilteredUsers() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            let filtered = allUsers.filter(u => (u.username || '').toLowerCase().includes(searchTerm));
+            filtered.sort((a, b) => parseFloat(b.balance || 0) - parseFloat(a.balance || 0));
+            renderUsers(filtered);
+        }
+
+        function selectForControl(username, rtp) {
+            secureSelectedUser = username;
+            document.getElementById('ctrl-target-user').value = username;
+            document.getElementById('target-action-user').value = username;
+            document.getElementById('ctrl-rtp-range').value = rtp;
+            document.getElementById('rtp-val-label').innerText = rtp + '%';
+            showNotification(`تم تحديد: ${username}`);
+        }
+
+        async function fetchAndOpenHistory(type) {
+            const modalEl = document.getElementById('historyModal');
+            const myModal = new bootstrap.Modal(modalEl);
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-dynamic-content');
+            const target_username = document.getElementById('ctrl-target-user').value.trim().toLowerCase();
+            const safeType = type.trim().toLowerCase();
+
+            title.innerText = "Historique: " + safeType.toUpperCase();
+            body.innerHTML = '<div class="text-center p-3 text-info fw-bold" style="font-size: 0.75rem;">Chargement... ⏳</div>';
+            myModal.show();
+
+            if (safeType === 'pending') {
+                title.innerText = "Dépôts en Attente";
+                try {
+                    const res = await fetch(`${BACKEND_URL}/api/admin/get-pending-deposits`, { headers: getAuthHeaders() });
+                    if (res.ok) {
+                        const tickets = await res.json();
+                        window._currentPendingDeposits = tickets;
+
+                        if (tickets && tickets.length > 0) {
+                            let html = `<div class="d-flex flex-column gap-2" style="max-height: 350px; overflow-y: auto;">`;
+                            tickets.forEach((t, index) => {
+                                const ticketId = t.ticket_id || t.id || index;
+                                const username = escapeHTML(t.username || t.player || "Inconnu");
+                                const method = escapeHTML(t.method || "N/A");
+                                const codeVal = escapeHTML(t.code || t.pin_code || t.reference || "N/A");
+
+                                const imageBtn = t.receipt_image
+                                    ? `<button onclick="viewReceiptImage(${index})" class="btn btn-mini btn-outline-info py-0 px-1" style="font-size: 0.65rem;">📸 الإيصال</button>`
+                                    : `<span class="text-secondary small" style="font-size: 0.65rem;">بدون إيصال</span>`;
+
+                                html += `
+                                <div class="bg-black border border-warning rounded-2 p-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong class="text-white" style="font-size: 0.75rem;">👤 ${username}</strong>
+                                        <span class="badge bg-warning text-dark font-mono" style="font-size: 0.6rem;">En attente</span>
+                                    </div>
+                                    <div class="text-secondary mb-1 d-flex justify-content-between align-items-center" style="font-size: 0.65rem;">
+                                        <span>Méthode: <strong class="text-white">${method}</strong></span>
+                                        ${imageBtn}
+                                    </div>
+                                    <div class="bg-dark p-1 rounded-2 text-center border border-dark mb-2 font-mono text-success fw-bold" style="font-size: 0.75rem;">
+                                        ${codeVal}
+                                    </div>
+                                    <div class="row g-1 align-items-center">
+                                        <div class="col-4">
+                                            <input type="number" id="amt-${ticketId}" class="form-control form-control-mini text-center font-mono py-0" placeholder="Montant">
+                                        </div>
+                                        <div class="col-4">
+                                            <button class="btn btn-mini btn-success w-100 py-0.5" onclick="approveDeposit('${ticketId}', '${username}')">✅ Valider</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button class="btn btn-mini btn-danger w-100 py-0.5" onclick="rejectDeposit('${ticketId}')">❌ Rejeter</button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            });
+                            html += `</div>`;
+                            body.innerHTML = html;
+                        } else { body.innerHTML = '<div class="text-center p-3 text-secondary" style="font-size: 0.75rem;">Aucune demande.</div>'; }
+                    } else { body.innerHTML = '<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur serveur.</div>'; }
+                } catch (error) { body.innerHTML = '<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur de connexion.</div>'; }
+                return;
+            }
+
+            else if (safeType === 'withdrawals') {
+                title.innerText = "Retraits en Attente";
+                try {
+                    const res = await fetch(`${BACKEND_URL}/api/admin/get-pending-withdrawals`, { headers: getAuthHeaders() });
+                    if (res.ok) {
+                        const withdrawals = await res.json();
+                        if (withdrawals && withdrawals.length > 0) {
+                            let html = `<div class="d-flex flex-column gap-2" style="max-height: 350px; overflow-y: auto;">`;
+                            withdrawals.forEach((w, index) => {
+                                const wId = w.id || w.ticket_id || w.tx_id || index;
+                                const username = escapeHTML(w.username || w.target_username || w.player || "Inconnu");
+                                const amount = parseFloat(w.amount || 0).toFixed(2);
+                                const details = escapeHTML(w.tx_id || "Détails non spécifiés");
+                                html += `
+                                <div class="bg-black border border-danger rounded-2 p-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong class="text-white" style="font-size: 0.75rem;">👤 ${username}</strong>
+                                        <span class="badge bg-danger text-white font-mono" style="font-size: 0.6rem;">En attente</span>
+                                    </div>
+                                    <div class="text-secondary small mb-2 p-1 bg-dark rounded-2 border border-dark font-mono" style="font-size: 0.65rem;">
+                                        ${details}
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center border-top border-dark pt-1">
+                                        <span class="text-danger fw-bold font-mono" style="font-size: 0.8rem;">${amount} TND</span>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-mini btn-success py-0.5 px-2" onclick="processWithdrawal('${wId}', '${username}', ${amount}, 'approve')">✅ Valider</button>
+                                            <button class="btn btn-mini btn-outline-danger py-0.5 px-2" onclick="processWithdrawal('${wId}', '${username}', ${amount}, 'reject')">❌ Rejeter</button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            });
+                            html += `</div>`;
+                            body.innerHTML = html;
+                        } else {
+                            body.innerHTML = '<div class="text-center p-3 text-secondary" style="font-size: 0.75rem;">Aucune demande.</div>';
+                        }
+                    } else {
+                        body.innerHTML = '<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur serveur.</div>';
+                    }
+                } catch (error) {
+                    body.innerHTML = '<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur de connexion.</div>';
+                }
+                return;
+            }
+
+            else if (safeType === 'sport') {
+                try {
+                    let url = '';
+                    if (target_username && target_username !== "sélectionnez...") {
+                        url = `${BACKEND_URL}/api/admin/get-player-tickets?username=${encodeURIComponent(target_username)}&t=${Date.now()}`;
+                    } else {
+                        url = `${BACKEND_URL}/api/admin/get-all-tickets?t=${Date.now()}`;
+                    }
+
+                    const res = await fetch(url, { headers: getAuthHeaders() });
+                    if (res.ok) {
+                        const tickets = await res.json();
+                        if (tickets && tickets.length > 0) {
+                            let html = `<div class="d-flex flex-column gap-1.5" style="max-height: 350px; overflow-y: auto;">`;
+                            tickets.forEach(t => {
+                                let badgeColor = t.status === "gagne" ? "text-success" : (t.status === "perdu" ? "text-danger" : (t.status === "cashout" ? "text-warning" : "text-info"));
+                                let matchesHtml = Array.isArray(t.details_list) ? t.details_list.map(g => `• ${escapeHTML(g.matchName)} (<span class="text-warning">${escapeHTML(g.outcome)}</span>)`).join('<br>') : escapeHTML(t.match || "Match Inconnu");
+                                html += `
+                                <div class="bg-black border border-dark rounded-2 p-2 d-flex flex-column flex-md-row justify-content-between gap-2" style="font-size: 0.7rem;">
+                                    <div class="text-white">
+                                        <span class="text-secondary font-mono">#${t.ticket_id || t.id || ''} • 👤 <span class="text-info">${escapeHTML(t.username || '')}</span></span><div class="mt-0.5">${matchesHtml}</div>
+                                    </div>
+                                    <div class="text-end font-mono border-top border-md-0 border-dark pt-1 pt-md-0">
+                                        <div class="text-secondary" style="font-size: 0.65rem;">Cote: X${parseFloat(t.total_cote || 0).toFixed(2)} | Mise: ${parseFloat(t.mise || 0).toFixed(2)}</div>
+                                        <div class="fw-bold ${badgeColor}" style="font-size: 0.75rem;">Gain: +${parseFloat(t.gain || 0).toFixed(2)} TND</div>
+                                        <span class="badge border border-secondary text-uppercase ${badgeColor} py-0 px-1" style="font-size: 0.55rem;">${t.status}</span>
+                                    </div>
+                                </div>`;
+                            });
+                            html += `</div>`;
+                            body.innerHTML = html;
+                        } else { body.innerHTML = `<div class="text-center p-3 text-secondary" style="font-size: 0.75rem;">لا توجد أوراق رياضية.</div>`; }
+                    }
+                } catch (e) { body.innerHTML = `<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur API</div>`; }
+            }
+            else if (safeType === 'transfert') {
+                try {
+                    const res = await fetch(`${BACKEND_URL}/api/admin/transactions-history?username=${user.username}`, { headers: getAuthHeaders() });
+                    if (res.ok) {
+                        allTransactionsCache = await res.json();
+                        renderTransactionsModalUI(body);
+                    }
+                } catch (e) { body.innerHTML = `<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur API</div>`; }
+            }
+            else if (safeType === 'compte') {
+                try {
+                    const [usersRes, txRes] = await Promise.all([
+                        fetch(`${BACKEND_URL}/api/admin/users?t=${Date.now()}`, { headers: getAuthHeaders() }),
+                        fetch(`${BACKEND_URL}/api/admin/transactions-history?username=${user.username}`, { headers: getAuthHeaders() })
+                    ]);
+                    if (usersRes.ok && txRes.ok) {
+                        const usersList = await usersRes.json();
+                        allTransactionsCache = await txRes.json();
+                        renderCompteStatsUI(body, usersList);
+                    } else { body.innerHTML = `<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">خطأ في جلب البيانات</div>`; }
+                } catch (e) { body.innerHTML = `<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur API</div>`; }
+            }
+            else if (safeType === 'casino') {
+                try {
+                    const res = await fetch(`${BACKEND_URL}/api/admin/casino-history`, { headers: getAuthHeaders() });
+                    if (res.ok) {
+                        const history = await res.json();
+                        if (history && history.length > 0) {
+                            let html = `<div class="d-flex flex-column gap-1.5" style="max-height: 350px; overflow-y: auto;">`;
+                            history.forEach(t => {
+                                const isWin = t.action === 'win';
+                                const badgeColor = isWin ? 'text-success' : 'text-danger';
+                                const sign = isWin ? '+' : '-';
+                                const actionName = isWin ? 'Gain (ربح)' : 'Mise (رهان)';
+
+                                html += `
+                                <div class="bg-black border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                                    <div>
+                                        <div class="text-white fw-bold">👤 ${escapeHTML(t.username)}</div>
+                                        <div class="text-secondary font-mono" style="font-size: 0.6rem;">🕒 ${t.date}</div>
+                                    </div>
+                                    <div class="text-end font-mono">
+                                        <span class="badge border border-secondary text-uppercase ${badgeColor} py-0 px-1 mb-1" style="font-size: 0.55rem;">${actionName}</span>
+                                        <div class="${badgeColor} fw-bold" style="font-size: 0.75rem;">${sign}${parseFloat(t.amount).toFixed(2)} TND</div>
+                                    </div>
+                                </div>`;
+                            });
+                            html += `</div>`;
+                            body.innerHTML = html;
+                        } else {
+                            body.innerHTML = `<div class="text-center p-3 text-secondary" style="font-size: 0.75rem;">لا توجد سجلات كازينو حتى الآن.</div>`;
+                        }
+                    }
+                } catch (e) {
+                    body.innerHTML = `<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur API</div>`;
+                }
+            }
+            else if (safeType === 'audit') {
+                title.innerText = "Audit Trail: 🛡️ سجل التدقيق";
+                try {
+                    const res = await fetch(`${BACKEND_URL}/api/admin/audit-logs`, { headers: getAuthHeaders() }); if (res.ok) {
+                        const logs = await res.json();
+                        if (logs && logs.length > 0) {
+                            let html = `<div class="d-flex flex-column gap-1.5" style="max-height: 380px; overflow-y: auto;">`;
+                            logs.forEach(l => {
+                                html += `
+                    <div class="bg-black border border-dark rounded-2 p-2 font-mono" style="font-size: 0.7rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-warning fw-bold">👤 ${escapeHTML(l.admin_username)}</span>
+                            <span class="badge bg-dark border border-secondary text-info px-1 py-0" style="font-size: 0.6rem;">${escapeHTML(l.action_type)}</span>
+                        </div>
+                        <div class="text-white mb-1">${escapeHTML(l.details)}</div>
+                        <div class="text-secondary" style="font-size: 0.55rem;">🕒 ${l.date}</div>
+                    </div>`;
+                            });
+                            html += `</div>`;
+                            body.innerHTML = html;
+                        } else {
+                            body.innerHTML = `<div class="text-center p-3 text-secondary" style="font-size: 0.75rem;">لا توجد سجلات تدقيق حتى الآن.</div>`;
+                        }
+                    }
+                } catch (e) {
+                    body.innerHTML = `<div class="text-center p-3 text-danger" style="font-size: 0.75rem;">Erreur API</div>`;
+                }
+            }
+        }
+        function renderTransactionsModalUI(container) {
+            let html = `
+                <div class="row g-1 mb-2 bg-black border border-dark p-2 rounded-2 align-items-center" style="font-size: 0.7rem;">
+                    <div class="col-5">
+                        <label class="text-secondary mb-0">من:</label>
+                        <input type="date" id="tx-start-date" class="form-control form-control-mini text-center py-0">
+                    </div>
+                    <div class="col-5">
+                        <label class="text-secondary mb-0">إلى:</label>
+                        <input type="date" id="tx-end-date" class="form-control form-control-mini text-center py-0">
+                    </div>
+                    <div class="col-2 mt-auto">
+                        <button onclick="applyModalDateFilter()" class="btn btn-mini btn-owner-mini w-100 py-0.5"><i class="fa-solid fa-search"></i></button>
+                    </div>
+                </div>
+                <div id="modal-tx-list" class="d-flex flex-column gap-1" style="max-height: 320px; overflow-y: auto;"></div>
+            `;
+            container.innerHTML = html;
+            displayModalTransactions(allTransactionsCache);
+        }
+
+        function applyModalDateFilter() {
+            const startDate = document.getElementById('tx-start-date').value;
+            const endDate = document.getElementById('tx-end-date').value;
+            let filtered = allTransactionsCache;
+            if (startDate || endDate) {
+                filtered = allTransactionsCache.filter(t => {
+                    const txDate = t.date ? t.date.split(' ')[0] : '';
+                    if (!txDate) return false;
+                    let isAfterStart = true, isBeforeEnd = true;
+                    if (startDate) isAfterStart = txDate >= startDate;
+                    if (endDate) isBeforeEnd = txDate <= endDate;
+                    return isAfterStart && isBeforeEnd;
+                });
+            }
+            displayModalTransactions(filtered);
+        }
+
+        function displayModalTransactions(transactions) {
+            const listContainer = document.getElementById('modal-tx-list');
+            if (!transactions || transactions.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-secondary p-3" style="font-size: 0.7rem;">لا توجد معاملات</div>';
+                return;
+            }
+            let html = '';
+            transactions.forEach(t => {
+                const isCharge = t.action === 'charge' || t.action === 'deposit_request';
+                const color = isCharge ? 'text-success' : 'text-danger';
+                const sign = isCharge ? '+' : '-';
+                const targetName = escapeHTML(t.target_username || t.target || 'مجهول');
+                const receiptBtn = t.image_path ?
+                    `<a href="${BACKEND_URL}/${t.image_path}" target="_blank" class="text-warning text-decoration-none ms-1" style="font-size: 0.6rem;"><i class="fa-solid fa-image"></i></a>` : '';
+
+                html += `
+                    <div class="bg-black border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                        <div>
+                            <div class="text-white fw-bold">👤 ${targetName}</div>
+                            <div class="text-secondary font-mono" style="font-size: 0.6rem;">🕒 ${t.date || ''} ${receiptBtn}</div>
+                        </div>
+                        <div class="text-end font-mono">
+                            <div class="${color} fw-bold" style="font-size: 0.75rem;">${sign}${parseFloat(t.amount).toFixed(2)} TND</div>
+                        </div>
+                    </div>`;
+            });
+            listContainer.innerHTML = html;
+        }
+
+        function renderCompteStatsUI(container, usersList) {
+            let userOptions = `<option value="ALL">🌐 كل الموقع</option>`;
+            if (usersList && usersList.length > 0) {
+                usersList.forEach(u => {
+                    const cleanUser = escapeHTML(u.username);
+                    userOptions += `<option value="${cleanUser}">👤 ${cleanUser}</option>`;
+                });
+            }
+            let html = `
+                <div class="bg-black border border-dark p-2 rounded-2 mb-2" style="font-size: 0.7rem;">
+                    <div class="row g-1" dir="rtl">
+                        <div class="col-12 col-md-4">
+                            <label class="text-secondary mb-0">الحساب:</label>
+                            <select id="stat-user-select" class="form-select form-select-mini text-center fw-bold text-white py-0">${userOptions}</select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="text-secondary mb-0">من:</label>
+                            <input type="date" id="stat-start-date" class="form-control form-control-mini text-center py-0">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="text-secondary mb-0">إلى:</label>
+                            <input type="date" id="stat-end-date" class="form-control form-control-mini text-center py-0">
+                        </div>
+                        <div class="col-12 col-md-2 mt-auto">
+                            <button onclick="calculateAccountStats()" class="btn btn-mini btn-owner-mini w-100 py-1">إحسب</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="stat-dashboard-results"></div>
+            `;
+            container.innerHTML = html;
+            calculateAccountStats();
+        }
+
+        function calculateAccountStats() {
+            const selectedUser = document.getElementById('stat-user-select').value;
+            const startDate = document.getElementById('stat-start-date').value;
+            const endDate = document.getElementById('stat-end-date').value;
+
+            let filteredTx = allTransactionsCache || [];
+            if (selectedUser !== "ALL") filteredTx = filteredTx.filter(t => t.target_username === selectedUser);
+            if (startDate || endDate) {
+                filteredTx = filteredTx.filter(t => {
+                    const txDate = t.date ? t.date.split(' ')[0] : '';
+                    if (!txDate) return false;
+                    let isAfterStart = true, isBeforeEnd = true;
+                    if (startDate) isAfterStart = txDate >= startDate;
+                    if (endDate) isBeforeEnd = txDate <= endDate;
+                    return isAfterStart && isBeforeEnd;
+                });
+            }
+
+            let totalCharged = 0, totalWithdrawn = 0;
+            filteredTx.forEach(t => {
+                const amt = parseFloat(t.amount) || 0;
+                if (t.action === 'charge') totalCharged += amt;
+                else if (t.action === 'withdraw') totalWithdrawn += amt;
+            });
+
+            const dashboard = document.getElementById('stat-dashboard-results');
+            const titleText = selectedUser === "ALL" ? "📊 إحصائيات عامة" : `📊 إحصائيات: ${selectedUser}`;
+
+            let html = `
+                <h6 class="text-owner fw-bold text-center mb-1 mt-2" dir="rtl" style="font-size: 0.75rem;">${titleText}</h6>
+                <div class="row g-1 mb-1">
+                    <div class="col-6">
+                        <div class="bg-black border border-success rounded-2 p-2 text-center">
+                            <div class="text-secondary" style="font-size: 0.6rem;">شحن ⬆️</div>
+                            <div class="text-success fw-bold font-mono" style="font-size: 0.8rem;">${totalCharged.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-black border border-danger rounded-2 p-2 text-center">
+                            <div class="text-secondary" style="font-size: 0.6rem;">سحب ⬇️</div>
+                            <div class="text-danger fw-bold font-mono" style="font-size: 0.8rem;">${totalWithdrawn.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-black border border-dark rounded-2 p-2 text-center">
+                    <div class="text-secondary" style="font-size: 0.6rem;">الصافي</div>
+                    <div class="text-info fw-bold font-mono" style="font-size: 0.85rem;">${(totalCharged - totalWithdrawn).toFixed(2)} TND</div>
+                </div>
+            `;
+            dashboard.innerHTML = html;
+        }
+
+        function showResettlementPanel() {
+            document.getElementById('default-dashboard-view').classList.add('d-none');
+            document.getElementById('admin-resettlement-panel').classList.remove('d-none');
+            fetchAllTickets();
+        }
+
+        function hideResettlementPanel() {
+            document.getElementById('admin-resettlement-panel').classList.add('d-none');
+            document.getElementById('default-dashboard-view').classList.remove('d-none');
+        }
+
+        function searchTicket() { document.getElementById('ticket-details-section').classList.remove('d-none'); }
+
+        async function resettleTicket() {
+            const ticketId = document.getElementById('ticket-search-input').value;
+            const newStatus = document.querySelector('#ticket-details-section select').value;
+            if (!ticketId) return showNotification("❌ أدخل رقم التذكرة", "error");
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/resettle-ticket`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ ticket_id: ticketId, new_status: newStatus })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    showNotification(`✅ ${data.message}`);
+                    hideResettlementPanel();
+                } else {
+                    const err = await res.json();
+                    showNotification(`❌ خطأ: ${err.detail || "خطأ"}`, "error");
+                }
+            } catch (e) { showNotification("خطأ في الاتصال", "error"); }
+        }
+
+        async function fetchAllTickets() {
+            const listContainer = document.getElementById('all-tickets-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '<div class="text-info text-center p-2" style="font-size: 0.7rem;">جاري التحميل...</div>';
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/get-all-tickets`, { headers: getAuthHeaders() });
+                const tickets = await res.json();
+                if (tickets.length === 0) {
+                    listContainer.innerHTML = '<div class="text-secondary text-center p-2" style="font-size: 0.7rem;">لا توجد أوراق.</div>';
+                    return;
+                }
+                listContainer.innerHTML = tickets.map(t => {
+                    const tId = escapeHTML(t.ticket_id || t.id || "N/A");
+                    const user = escapeHTML(t.username || t.user || "Unknown");
+                    const status = escapeHTML(t.status || "N/A");
+                    const matchName = escapeHTML(t.match || 'Match ...');
+                    return `
+                    <div class="bg-black border border-dark rounded-2 p-2" style="font-size: 0.7rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-0.5">
+                            <div>
+                                <span class="text-white fw-bold font-mono">#${tId}</span> • 
+                                <span class="text-secondary">${user}</span>
+                            </div>
+                            <span class="badge ${status === 'gagne' ? 'bg-success' : (status === 'perdu' ? 'bg-danger' : 'bg-info')} py-0 px-1 text-uppercase" style="font-size: 0.55rem;">${status}</span>
+                        </div>
+                        <div class="text-white">${matchName}</div>
+                    </div>`;
+                }).join('');
+            } catch (e) { listContainer.innerHTML = '<div class="text-danger text-center p-2">خطأ</div>'; }
+        }
+
+        function openPasswordModal() { new bootstrap.Modal(document.getElementById('passwordModal')).show(); }
+        function logout() { localStorage.clear(); sessionStorage.clear(); window.location.href = '/'; }
+
+        async function submitNewPassword() {
+            const passwordInput = document.getElementById('new-sys-pass');
+            const new_password = passwordInput.value.trim();
+            const updateBtn = document.querySelector('#passwordModal button.btn-owner-mini');
+
+            if (!new_password || new_password.length < 6) return showNotification('6 أحرف على الأقل!', 'error');
+
+            if (updateBtn) { updateBtn.disabled = true; updateBtn.innerText = '⏳'; }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/user/change-password`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ username: user.username, new_password })
+                });
+                if (res.ok) {
+                    showNotification('Mot de passe mis à jour!', 'success');
+                    passwordInput.value = '';
+                    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('passwordModal'));
+                    if (modalInstance) modalInstance.hide();
+                } else {
+                    const data = await res.json();
+                    showNotification(data.detail || 'Erreur', 'error');
+                }
+            } catch (e) {
+                showNotification('Erreur', 'error');
+            } finally {
+                if (updateBtn) { updateBtn.disabled = false; updateBtn.innerText = 'Mettre à jour'; }
+            }
+        }
+
+        async function changeUserPasswordFromOwner() {
+            const target = secureSelectedUser;
+            const newPassword = document.getElementById('ctrl-user-new-pass').value.trim();
+            if (!target) return showNotification('حدد حساب أولاً', 'error');
+            if (!newPassword || newPassword.length < 4) return showNotification('كلمة المرور قصيرة', 'error');
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/change-player-password`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ admin_username: user.username, target_username: target, new_password: newPassword })
+                });
+                if (res.ok) {
+                    showNotification(`تم تغيير كلمة السر بنجاح!`);
+                    document.getElementById('ctrl-user-new-pass').value = '';
+                } else { showNotification('Erreur', 'error'); }
+            } catch (e) { showNotification('Erreur', 'error'); }
+        }
+        async function saveRtpAndBlock(blockStatus) {
+            const target_username = secureSelectedUser;
+            let rawRtp = parseInt(document.getElementById('ctrl-rtp-range').value);
+
+            if (isNaN(rawRtp)) rawRtp = 50;
+            const rtp = Math.max(1, Math.min(99, rawRtp));
+
+            if (!target_username) return showNotification('الرجاء تحديد حساب أولاً!', 'error');
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/configure-account`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        admin_username: user.username,
+                        target_username,
+                        rtp,
+                        is_blocked: blockStatus
+                    })
+                });
+                if (res.ok) {
+                    showNotification(blockStatus === 1 ? 'تم حظر الحساب!' : 'تم حفظ الإعدادات!');
+                    loadNetworkData();
+                } else {
+                    const data = await res.json();
+                    showNotification(data.detail || 'خطأ', 'error');
+                }
+            } catch (e) {
+                showNotification('خطأ في الاتصال', 'error');
+            }
+        }
+
+        function triggerGoldRain() {
+            const duration = 2 * 1000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFD700', '#F8B400'], zIndex: 9999 });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFD700', '#F8B400'], zIndex: 9999 });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        async function deleteAccountAction() {
+            const target_username = secureSelectedUser;
+            if (!target_username) return showNotification('Sélectionnez un compte!', 'error');
+
+            if (!confirm(`Supprimer le compte: ${target_username} ?`)) return;
+
+            let headers = getAuthHeaders();
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/delete-account`, {
+                    method: 'DELETE', headers: headers, body: JSON.stringify({ admin_username: user.username, target_username: target_username })
+                });
+                if (res.ok) {
+                    showNotification('Compte supprimé!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const data = await res.json();
+                    showNotification('Erreur: ' + (data.detail || data.message), 'error');
+                }
+            } catch (e) { showNotification('Erreur', 'error'); }
+        }
+
+        async function executeAction(action) {
+            const target_username = secureSelectedUser;
+            const amountInput = document.getElementById('target-action-amount').value;
+            const actionBtn = action === 'charge' ? document.getElementById('btn-credit') : document.getElementById('btn-retirer');
+
+            if (!target_username) return showNotification('Sélectionnez un compte!', 'error');
+
+            const amount = parseFloat(amountInput);
+            if (isNaN(amount) || amount <= 0) return showNotification('Montant invalide!', 'error');
+
+            if (actionBtn) { actionBtn.disabled = true; actionBtn.innerText = '⏳'; }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/update-balance`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ admin_username: user.username, target_username, action, amount })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification('Succès!');
+                    document.getElementById('target-action-amount').value = '';
+                    loadNetworkData();
+                } else { showNotification(data.detail || 'Erreur', 'error'); }
+            } catch (e) {
+                showNotification('Erreur', 'error');
+            } finally {
+                if (actionBtn) { actionBtn.disabled = false; actionBtn.innerText = action === 'charge' ? 'Créditer' : 'Retirer'; }
+            }
+        }
+
+        async function createNetworkUser() {
+            const usernameInput = document.getElementById('new-user-name');
+            const passwordInput = document.getElementById('new-user-pass');
+            const roleSelect = document.getElementById('new-user-role');
+            const phoneInput = document.getElementById('new_phone');
+            const username = usernameInput.value.trim().toLowerCase();
+            const password = passwordInput.value;
+            const role = roleSelect ? roleSelect.value : 'player';
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+
+            if (!username || !password) return showNotification('Remplir les champs!', 'error');
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/register`, {
+                    method: 'POST', headers: getAuthHeaders(),
+                    body: JSON.stringify({ username, password, role, created_by: user.username, phone })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification('Compte créé!', 'success');
+                    usernameInput.value = ''; passwordInput.value = ''; if (phoneInput) phoneInput.value = '';
+                    loadNetworkData();
+                } else { showNotification(data.detail || 'Erreur', 'error'); }
+            } catch (e) { showNotification('Erreur', 'error'); }
+        }
+
+        async function checkNewDeposits() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/get-pending-deposits`, { method: 'GET', headers: getAuthHeaders() });
+                if (res.status === 401 || res.status === 403) { logout(); return; }
+
+                if (res.ok) {
+                    const deposits = await res.json();
+                    if (deposits.length > 0) {
+                        if (audioAllowed) {
+                            const audio = new Audio('https://actions.google.com/sounds/v1/notifications/complete.ogg');
+                            audio.play().catch(e => console.log("Audio blocked"));
+                        }
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+        setInterval(checkNewDeposits, 10000);
+
+        let audioAllowed = false;
+        function enableAudio() {
+            audioAllowed = true;
+            document.getElementById('audio-enable-btn').style.display = 'none';
+            showNotification('Audio activé!', 'success');
+        }
+
+async function approveDeposit(ticketId, username) {
+            if (isTransactionRunning) return showNotification("⏳ En cours...", "warning");
+
+            const amountInput = document.getElementById(`amt-${ticketId}`).value;
+            const amount = parseFloat(amountInput);
+            if (isNaN(amount) || amount <= 0) return alert("Montant invalide");
+
+            if (confirm(`Valider ${amount} TND pour ${username} ?`)) {
+                isTransactionRunning = true;
+                try {
+                    // 1. إضافة الرصيد الفعلي في حساب اللاعب
+                    const chargeRes = await fetch(`${BACKEND_URL}/api/admin/update-balance`, {
+                        method: 'POST', headers: getAuthHeaders(),
+                        body: JSON.stringify({ 
+                            admin_username: user.username, 
+                            target_username: username, 
+                            action: 'charge', 
+                            amount: amount 
+                        })
+                    });
+
+                    if (chargeRes.ok) {
+                        // 2. إزالة الطلب من طابور المعلقين
+                        await fetch(`${BACKEND_URL}/api/admin/handle-request`, {
+                            method: 'POST', headers: getAuthHeaders(),
+                            body: JSON.stringify({ 
+                                transaction_id: parseInt(ticketId), 
+                                decision: 'reject', 
+                                admin_username: user.username 
+                            })
+                        });
+
+                        // 3. 🔔 إرسال الإشعار الآلي للاعب بالشحن (بالفرنسية)
+                        await fetch(`${BACKEND_URL}/api/admin/send-notification`, {
+                            method: 'POST', headers: getAuthHeaders(),
+                            body: JSON.stringify({ 
+                                target_user: username, 
+                                title: "Dépôt Approuvé ✅", 
+                                message: `Votre demande de dépôt de ${amount} TND a été approuvée avec succès.`, 
+                                icon: "fa-wallet" 
+                            })
+                        });
+
+                        alert("✅ Approuvé et crédité avec succès !");
+                        triggerGoldRain();
+                        fetchAndOpenHistory('pending');
+                    } else {
+                        const err = await chargeRes.json();
+                        alert(`❌ Erreur: ${err.detail || "Erreur"}`); 
+                    }
+                } catch (error) {
+                    alert("❌ Erreur réseau");
+                } finally {
+                    isTransactionRunning = false;
+                }
+            }
+        }
+
+        async function processWithdrawal(reqId, username, amount, actionType) {
+            if (isTransactionRunning) return showNotification("⏳ En cours...", "warning");
+
+            const isApprove = actionType === 'approve';
+            const confirmMsg = isApprove ? `Valider le retrait de ${amount} TND ?` : `Rejeter le retrait ?`;
+
+            if (confirm(confirmMsg)) {
+                isTransactionRunning = true;
+                try {
+                    const res = await fetch(`${BACKEND_URL}/api/admin/process-withdrawal`, {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ request_id: reqId, action: actionType })
+                    });
+
+                    if (res.ok) {
+                        showNotification(isApprove ? "✅ Validé !" : "❌ Rejeté !");
+                        
+                        // 🔔 إرسال الإشعار الآلي للاعب بالسحب (بالفرنسية)
+                        if (isApprove) {
+                            await fetch(`${BACKEND_URL}/api/admin/send-notification`, {
+                                method: 'POST', headers: getAuthHeaders(),
+                                body: JSON.stringify({ 
+                                    target_user: username, 
+                                    title: "Retrait Approuvé 💸", 
+                                    message: `Votre demande de retrait de ${amount} TND a été approuvée et vous parviendra sous 24 heures.`, 
+                                    icon: "fa-money-bill-wave" 
+                                })
+                            });
+                            triggerGoldRain();
+                        } else {
+                            await fetch(`${BACKEND_URL}/api/admin/send-notification`, {
+                                method: 'POST', headers: getAuthHeaders(),
+                                body: JSON.stringify({ 
+                                    target_user: username, 
+                                    title: "Retrait Refusé ❌", 
+                                    message: `Votre demande de retrait de ${amount} TND a été refusée. Veuillez contacter le support.`, 
+                                    icon: "fa-exclamation-circle" 
+                                })
+                            });
+                        }
+
+                        fetchAndOpenHistory('withdrawals');
+                    } else {
+                        showNotification("Erreur", "error");
+                    }
+                } catch (e) {
+                    showNotification("Erreur", "error");
+                } finally {
+                    isTransactionRunning = false;
+                }
+            }
+        }
+        async function rejectDeposit(ticketId) {
+            if (!confirm("Refuser ce dépôt ?")) return;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/handle-request`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        transaction_id: parseInt(ticketId),
+                        decision: 'reject',
+                        admin_username: user.username
+                    })
+                });
+
+                if (response.ok) {
+                    fetchAndOpenHistory('pending');
+                    showNotification("❌ Demande rejetée");
+                } else {
+                    alert("❌ Erreur");
+                }
+            } catch (error) {
+                alert("❌ Erreur réseau");
+            }
+        }
+
+        function copySecretCode(secret, event) {
+            event.stopPropagation();
+            navigator.clipboard.writeText(secret).then(() => {
+                showNotification(`Copié: ${secret}`, 'success');
+            }).catch(err => { showNotification('Erreur', 'error'); });
+        }
+
+        function viewReceiptImage(index) {
+            const t = window._currentPendingDeposits ? window._currentPendingDeposits[index] : null;
+            if (t && t.receipt_image) {
+                window.open(`${BACKEND_URL}/${t.receipt_image}`, '_blank');
+            } else {
+                alert("❌ Image introuvable");
+            }
+        }
+
+        async function processWithdrawal(reqId, username, amount, actionType) {
+            if (isTransactionRunning) return showNotification("⏳ En cours...", "warning");
+
+            const isApprove = actionType === 'approve';
+            const confirmMsg = isApprove ? `Valider le retrait de ${amount} TND ?` : `Rejeter le retrait ?`;
+
+            if (confirm(confirmMsg)) {
+                isTransactionRunning = true;
+                try {
+                    const res = await fetch(`${BACKEND_URL}/api/admin/process-withdrawal`, {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ request_id: reqId, action: actionType })
+                    });
+
+                    if (res.ok) {
+                        showNotification(isApprove ? "✅ Validé !" : "❌ Rejeté !");
+                        fetchAndOpenHistory('withdrawals');
+                        if (isApprove) triggerGoldRain();
+                    } else {
+                        showNotification("Erreur", "error");
+                    }
+                } catch (e) {
+                    showNotification("Erreur", "error");
+                } finally {
+                    isTransactionRunning = false;
+                }
+            }
+        }
+
+        let idleTime = 0;
+        function timerIncrement() {
+            idleTime = idleTime + 1;
+            if (idleTime > 15) {
+                showNotification("Déconnexion pour inactivité", "warning");
+                setTimeout(logout, 1500);
+            }
+        }
+        document.body.addEventListener('mousemove', () => idleTime = 0);
+        document.body.addEventListener('keypress', () => idleTime = 0);
+        setInterval(timerIncrement, 60000);
+
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+
+        // ==========================================
+        // نظام الجدار الأمني للأرباح الضخمة (30,000+)
+        // ==========================================
+        async function fetchHugeWins() {
+            const section = document.getElementById('huge-wins-section');
+            const tbody = document.getElementById('huge-wins-tbody');
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/pending-huge-wins`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+
+                    if (data.length === 0) {
+                        // إظهار القسم دائماً مع رسالة تطمين
+                        section.style.display = 'block';
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-secondary p-2 font-mono" style="font-size: 0.75rem;">لا توجد أرباح ضخمة معلقة حالياً ✅</td></tr>';
+                        return;
+                    }
+
+                    section.style.display = 'block';
+                    tbody.innerHTML = '';
+
+                    data.forEach(tx => {
+                        const amountFormatted = parseFloat(tx.amount).toLocaleString('fr-FR', { minimumFractionDigits: 2 });
+                        tbody.innerHTML += `
+                            <tr class="bg-black border border-warning rounded p-1 d-flex justify-content-between align-items-center mb-1">
+                                <td class="px-2 font-mono fw-bold text-info">${escapeHTML(tx.target_username)}</td>
+                                <td class="px-2 font-mono fw-bold text-success" style="font-size: 0.8rem;">+${amountFormatted} TND</td>
+                                <td class="px-2 d-flex gap-1">
+                                    <button onclick="handleHugeWin(${tx.id}, 'approve')" class="btn btn-mini btn-success py-0 px-2 fw-bold">✅</button>
+                                    <button onclick="handleHugeWin(${tx.id}, 'reject')" class="btn btn-mini btn-danger py-0 px-2 fw-bold">❌</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) { console.error("Error fetching huge wins"); }
+        }
+
+        async function sendFreeSpins() {
+            const username = document.getElementById('fs-target-user').value;
+            const provider = document.getElementById('fs-provider').value;
+            const gameCode = document.getElementById('fs-game-code').value;
+            const spinCount = document.getElementById('fs-spin-count').value;
+            const amount = document.getElementById('fs-amount').value;
+            const btn = document.getElementById('btn-send-fs');
+
+            if (!username) return showNotification("حدد حساب اللاعب أولاً من القائمة!", "error");
+            if (!gameCode) return showNotification("أدخل كود اللعبة الدقيق!", "error");
+
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري الإرسال...";
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/grant-freespins`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        target_username: username,
+                        provider_code: provider,
+                        game_code: gameCode,
+                        spin_count: parseInt(spinCount),
+                        amount: parseFloat(amount),
+                        bet_level: 1
+                    })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    // real_win هو التكلفة الحقيقية التي خصمها المزود من رصيد الوكيل الخاص بك
+                    showNotification(`✅ ${data.message} (التكلفة: ${data.real_win})`, "success");
+                    triggerGoldRain();
+                } else {
+                    showNotification(`❌ ${data.detail}`, "error");
+                }
+            } catch (e) {
+                showNotification("خطأ في الاتصال بالسيرفر", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "إرسال الآن";
+            }
+        }
+
+        async function cancelFreeSpins() {
+            const tourId = document.getElementById('fs-cancel-tour-id').value.trim();
+            if (!tourId) return showNotification("أدخل رقم الجولة (Tour ID) أولاً!", "error");
+
+            if (!confirm(`هل أنت متأكد من إلغاء الجولة ${tourId}؟ سيتم استرجاع رصيد اللفات المتبقية.`)) return;
+
+            const btn = document.getElementById('btn-cancel-fs');
+            btn.disabled = true;
+            btn.innerText = "⏳...";
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/cancel-freespins`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ tour_id: tourId })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showNotification(`✅ ${data.message}`, "success");
+                    document.getElementById('fs-cancel-tour-id').value = '';
+                } else {
+                    showNotification(`❌ ${data.detail}`, "error");
+                }
+            } catch (e) {
+                showNotification("خطأ في الاتصال بالسيرفر", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "إلغاء الجولة";
+            }
+        }
+
+        async function fetchPromoConfig() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/promo`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('promo-active').checked = data.is_active;
+                    document.getElementById('promo-day').value = data.day_of_week;
+                    document.getElementById('promo-min').value = data.min_amount;
+                    document.getElementById('promo-spins').value = data.spins;
+                    document.getElementById('promo-provider').value = data.provider;
+                    document.getElementById('promo-game').value = data.game;
+                }
+            } catch (e) { }
+        }
+
+        async function savePromoConfig() {
+            const payload = {
+                is_active: document.getElementById('promo-active').checked,
+                day_of_week: document.getElementById('promo-day').value,
+                min_amount: parseFloat(document.getElementById('promo-min').value),
+                spins: parseInt(document.getElementById('promo-spins').value),
+                provider: document.getElementById('promo-provider').value,
+                game: document.getElementById('promo-game').value,
+                max_win: 10000 // قيمة افتراضية للحد الأقصى للربح
+            };
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/promo`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) showNotification("✅ تم حفظ إعدادات العرض الآلي بنجاح!", "success");
+                else showNotification("❌ حدث خطأ أثناء الحفظ", "error");
+            } catch (e) { showNotification("خطأ في الاتصال", "error"); }
+        }
+
+        // أضف هذا السطر مع أوامر التحميل الأولية لتحديث الواجهة فور الدخول
+        document.addEventListener('DOMContentLoaded', fetchPromoConfig);
+
+        async function fetchFraudData() {
+            const container = document.getElementById('fraud-results-container');
+            container.innerHTML = '<span class="text-warning">⏳ جاري فحص قواعد البيانات وتحليل عناوين الـ IP والهواتف...</span>';
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/admin/fraud-detection`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    let htmlContent = '';
+
+                    const hasIps = Object.keys(data.shared_ips || {}).length > 0;
+                    const hasPhones = Object.keys(data.shared_phones || {}).length > 0;
+
+                    if (!hasIps && !hasPhones) {
+                        container.innerHTML = '<span class="text-success">✅ نظيف تماماً! لم يتم اكتشاف حسابات متطابقة تشترك في نفس الـ IP أو رقم الهاتف.</span>';
+                        return;
+                    }
+
+                    if (hasIps) {
+                        htmlContent += '<b class="text-danger">⚠️ حسابات تشترك في نفس عنوان الـ IP:</b><br>';
+                        for (const [ip, users] of Object.entries(data.shared_ips)) {
+                            const safeUsers = users.map(u => escapeHTML(u)).join(', ');
+                            htmlContent += `• IP: <code>${escapeHTML(ip)}</code> ➔ اللاعبون: <span class="text-warning">${safeUsers}</span><br>`;
+                        }
+                    }
+
+                    if (hasPhones) {
+                        htmlContent += '<br><b class="text-danger">⚠️ حسابات تشترك في نفس رقم الهاتف:</b><br>';
+                        for (const [phone, users] of Object.entries(data.shared_phones)) {
+                            const safeUsers = users.map(u => escapeHTML(u)).join(', ');
+                            htmlContent += `• هاتف: <code>${escapeHTML(phone)}</code> ➔ اللاعبون: <span class="text-warning">${safeUsers}</span><br>`;
+                        }
+                    }
+
+                    container.innerHTML = htmlContent;
+                } else {
+                    container.innerHTML = '<span class="text-danger">❌ فشل جلب بيانات الفحص الأمني.</span>';
+                }
+            } catch (e) {
+                container.innerHTML = '<span class="text-danger">❌ خطأ في الاتصال بالسيرفر.</span>';
+            }
+        }
+
+        async function fetchGGRAnalytics() {
+            const month = document.getElementById('ggr-month').value;
+            const year = document.getElementById('ggr-year').value;
+
+            let url = `${BACKEND_URL}/api/admin/analytics/ggr?`;
+            if (month) url += `month=${month}&`;
+            if (year) url += `year=${year}&`;
+
+            try {
+                const res = await fetch(url, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('ggr-bets').innerText = data.total_bets.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' TND';
+                    document.getElementById('ggr-wins').innerText = data.total_wins.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' TND';
+
+                    const profitEl = document.getElementById('ggr-profit');
+                    profitEl.innerText = data.ggr.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' TND';
+                    profitEl.className = data.ggr >= 0 ? "fw-bold text-success" : "fw-bold text-danger";
+
+                    document.getElementById('ggr-rtp').innerText = data.actual_rtp + '%';
+                }
+            } catch (e) {
+                console.error("Error fetching GGR analytics");
+            }
+        }
+
+        // جلب الإحصائيات الشهرية والسنوية تلقائياً عند فتح اللوحة
+        document.addEventListener('DOMContentLoaded', () => {
+            // تحديد السنة الحالية تلقائياً في القائمة المنسدلة
+            const currentYear = new Date().getFullYear();
+            const yearSelect = document.getElementById('ggr-year');
+            if (yearSelect) yearSelect.value = currentYear;
+
+            fetchGGRAnalytics();
+        });
+
+        async function sendPushNotification() {
+    const target = document.getElementById('notif-target').value || 'all';
+    const title = document.getElementById('notif-title').value;
+    const message = document.getElementById('notif-msg').value;
+
+    if (!title || !message) return showNotification("أدخل العنوان والنص", "error");
+
+    document.getElementById('btn-send-notif').disabled = true;
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/admin/send-notification`, {
+            method: 'POST', headers: getAuthHeaders(),
+            body: JSON.stringify({ target_user: target, title: title, message: message, icon: "fa-bullhorn" })
+        });
+        if (res.ok) {
+            showNotification("تم إرسال الإشعار بنجاح! 🔔", "success");
+            document.getElementById('notif-title').value = '';
+            document.getElementById('notif-msg').value = '';
+        }
+    } catch(e) { showNotification("خطأ", "error"); }
+    document.getElementById('btn-send-notif').disabled = false;
+}
+    </script>
+</body>
+
+</html>
