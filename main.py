@@ -2926,26 +2926,33 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
     save_db(db)
     return {"status": "success"}
 
-import traceback
-from fastapi.responses import JSONResponse
-
+# ==========================================
+# مسار مؤقت آمن جداً لإنشاء حساب المالك (Owner)
+# ==========================================
 @app.get("/setup-first-owner")
 def setup_first_owner():
     try:
-        # اختبار جلب البيانات من Firebase
-        db_data = load_db()
+        # الاتصال المباشر بـ Firebase لمنع أي خطأ في الدوال الوسيطة
+        ref = db.reference('/')
+        data = ref.get()
+        
+        if data is None:
+            data = {"users": [], "shop_withdrawals": [], "tickets": []}
+            
+        users = data.get("users", [])
+        if isinstance(users, dict):
+            users = list(users.values())
+            
         owner_username = "fethi"
         owner_password = "Coutabet2026!"
         
-        # التحقق مما إذا كان الحساب موجوداً بالفعل
-        for u in db_data:
+        # التحقق هل الحساب موجود مسبقاً
+        for u in users:
             if str(u.get("username", "")).strip().lower() == owner_username.lower():
-                return {"status": "success", "message": "حساب المالك موجود بالفعل!"}
+                return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول مباشرة."}
+                
+        new_id = max([int(u.get("id", 0)) for u in users]) + 1 if users else 1
         
-        # تحديد ID جديد
-        new_id = max([int(u.get("id", 0)) for u in db_data]) + 1 if db_data else 1
-        
-        # إنشاء الحساب الجديد
         new_owner = {
             "id": new_id,
             "username": owner_username,
@@ -2961,19 +2968,14 @@ def setup_first_owner():
             "phone": "00000000"
         }
         
-        db_data.append(new_owner)
-        save_db(db_data)
+        users.append(new_owner)
+        data["users"] = users
+        ref.set(data) # الحفظ المباشر في Firebase
         
-        return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح!"}
-    
+        return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح وبدون أخطاء!"}
+        
     except Exception as e:
-        # طباعة الخطأ كاملاً على الشاشة لنعرف السبب الحقيقي
-        error_details = traceback.format_exc()
-        print(error_details)
-        return JSONResponse(
-            status_code=500,
-            content={
-                "error": str(e),
-                "details": "تأكد من أن ملف firebase-key.json مرفوع على السيرفر أو أن إعدادات قاعدة البيانات صحيحة."
-            }
-        )
+        import traceback
+        err_msg = traceback.format_exc()
+        print(err_msg)
+        return {"status": "error", "details": str(e)}
