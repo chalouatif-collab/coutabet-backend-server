@@ -66,13 +66,19 @@ ADMIN_USER = os.getenv("ADMIN_USERNAME")
 ADMIN_PASS = os.getenv("ADMIN_PASSWORD")
 SECRET_KEY = os.getenv("SECRET_KEY", "alpha-secure-key-2026")
 
-# 1. إعداد الاتصال بـ Firebase
-if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase-key.json") 
-    firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
-    })
-
+# 1. إعداد الاتصال بـ Firebase (مُحصن ضد الانهيار)
+try:
+    if not firebase_admin._apps:
+        if os.path.exists("firebase-key.json"):
+            cred = credentials.Certificate("firebase-key.json") 
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
+            })
+        else:
+            print("⚠️ تحذير: ملف firebase-key.json مفقود! السيرفر سيعمل ولكن قاعدة البيانات السحابية لن تتصل.")
+except Exception as e:
+    print(f"❌ خطأ في تهيئة Firebase: {e}")
+    
 # 2. دالة جلب البيانات من السحابة
 def load_db():
     ref = db.reference('/') 
@@ -849,36 +855,6 @@ async def get_pending_huge_wins(current_user: str = Depends(get_admin_user)):
     finally:
         db_session.close()
 
-@app.post("/api/admin/handle-huge-win")
-async def handle_huge_win(req: HandleHugeWinRequest, current_user: str = Depends(get_admin_user)):
-    db = load_db()
-    admin = next((u for u in db if u["username"] == current_user), None)
-    if not admin or admin.get("role") not in ["owner", "super_admin"]:
-        raise HTTPException(status_code=403, detail="صلاحية الأونر مطلوبة")
-
-    db_session = SessionLocal()
-    try:
-        tx = db_session.query(Transaction).filter(Transaction.id == req.tx_id).first()
-        if not tx or tx.admin_username != "PENDING_HUGE_WIN":
-            return JSONResponse(status_code=404, content={"detail": "الطلب غير موجود أو تمت معالجته مسبقاً"})
-
-        if req.decision == "approve":
-            async with db_lock:
-                target_user = next((u for u in db if str(u.get("username", "")).lower() == str(tx.target_username).lower()), None)
-                if target_user:
-                    target_user["balance"] = round(float(target_user.get("balance", 0)) + tx.amount, 2)
-                    save_db(db)
-            tx.admin_username = f"APPROVED_BY_{current_user.upper()}"
-        else:
-            tx.admin_username = f"REJECTED_BY_{current_user.upper()}"
-
-        db_session.commit()
-        return {"status": "success", "message": "تمت معالجة الربح الضخم بنجاح"}
-    except Exception as e:
-        db_session.rollback()
-        return JSONResponse(status_code=500, content={"detail": str(e)})
-    finally:
-        db_session.close()
 
 @app.get("/api/admin/users")
 async def get_all_network_users(current_user: str = Depends(get_admin_user)): 
