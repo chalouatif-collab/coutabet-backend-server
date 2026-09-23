@@ -253,8 +253,8 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://xdanous.com",
-        "https://xdanous-player-frontend.onrender.com",
+        "https://coutabet.com",
+        "https://coutabet-player-frontend.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500"
     ],
@@ -2926,13 +2926,12 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
     save_db(db)
     return {"status": "success"}
 
-# ==========================================
-# مسار مؤقت آمن جداً لإنشاء حساب المالك (Owner)
-# ==========================================
+import traceback
+
 @app.get("/setup-first-owner")
 def setup_first_owner():
     try:
-        # الاتصال المباشر بـ Firebase لمنع أي خطأ في الدوال الوسيطة
+        # اختبار الاتصال المباشر بـ Firebase لمعرفة أصل المشكلة
         ref = db.reference('/')
         data = ref.get()
         
@@ -2946,10 +2945,9 @@ def setup_first_owner():
         owner_username = "fethi"
         owner_password = "Coutabet2026!"
         
-        # التحقق هل الحساب موجود مسبقاً
         for u in users:
             if str(u.get("username", "")).strip().lower() == owner_username.lower():
-                return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول مباشرة."}
+                return {"status": "success", "message": "حساب المالك موجود بالفعل!"}
                 
         new_id = max([int(u.get("id", 0)) for u in users]) + 1 if users else 1
         
@@ -2970,12 +2968,15 @@ def setup_first_owner():
         
         users.append(new_owner)
         data["users"] = users
-        ref.set(data) # الحفظ المباشر في Firebase
+        ref.set(data)
         
-        return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح وبدون أخطاء!"}
+        return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح!"}
         
     except Exception as e:
-        import traceback
-        err_msg = traceback.format_exc()
-        print(err_msg)
-        return {"status": "error", "details": str(e)}
+        # 🔍 طباعة تفاصيل الخطأ الحقيقي على صفحة الويب لنعرف سبب المشكلة فورا
+        error_trace = traceback.format_exc()
+        return {
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": error_trace
+        }
