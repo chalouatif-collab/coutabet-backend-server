@@ -3016,3 +3016,37 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
                 
     save_db(db)
     return {"status": "success"}
+
+# ==========================================
+# مسار مؤقت لإنشاء حساب المالك (Owner)
+# ==========================================
+@app.get("/api/setup-first-owner")
+def setup_first_owner(db: Session = Depends(get_db)):
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
+    # اسم المستخدم وكلمة المرور الخاصة بالمالك
+    owner_username = "fethi"
+    owner_password = "Coutabet2026!"  # يمكنك تغييرها
+    
+    # التحقق مما إذا كان الحساب موجوداً بالفعل
+    existing_user = db.query(User).filter(User.username == owner_username).first()
+    if existing_user:
+        return {"message": "حساب المالك موجود بالفعل!"}
+    
+    # إنشاء الحساب
+    new_owner = User(
+        username=owner_username,
+        password=pwd_context.hash(owner_password), # تشفير كلمة السر
+        role="owner",
+        balance=1000000.0,  # رصيد مبدئي مليون دينار لتوزيعها
+        rtp=50,
+        is_blocked=0,
+        created_by="system",
+        phone="00000000"
+    )
+    
+    db.add(new_owner)
+    db.commit()
+    
+    return {"message": f"تم إنشاء حساب المالك بنجاح! اسم المستخدم: {owner_username}"}
