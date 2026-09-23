@@ -257,6 +257,29 @@ from slowapi.errors import RateLimitExceeded
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI()
+from fastapi import Request
+from fastapi.responses import HTMLResponse
+import traceback
+
+# ==========================================
+# 🚨 كاشف الأخطاء الشامل (يُظهر سبب الـ 500 على الشاشة)
+# ==========================================
+@app.exception_handler(Exception)
+async def universal_exception_handler(request: Request, exc: Exception):
+    trace = traceback.format_exc()
+    html_content = f"""
+    <html dir="ltr">
+        <body style="background-color: #1e1e2f; color: white; font-family: monospace; padding: 20px;">
+            <h1 style="color: #ff5555;">🚨 تفاصيل انهيار السيرفر (Crash Report) 🚨</h1>
+            <p><strong>المسار المطلوب:</strong> {request.url}</p>
+            <div style="background-color: #000; padding: 15px; border-left: 5px solid #ff5555; overflow-x: auto;">
+                <pre style="color: #00ff00; font-size: 16px;">{trace}</pre>
+            </div>
+            <h3 style="color: yellow; text-align: right; font-family: Arial;">👉 يرجى تصوير أو نسخ هذا النص الأخضر وإرساله لي لأعطيك الحل الفوري.</h3>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=500)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
