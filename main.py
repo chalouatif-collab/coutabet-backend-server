@@ -67,18 +67,12 @@ ADMIN_PASS = os.getenv("ADMIN_PASSWORD")
 SECRET_KEY = os.getenv("SECRET_KEY", "alpha-secure-key-2026")
 
 # 1. إعداد الاتصال بـ Firebase
-try:
-    if not firebase_admin._apps:
-        if os.path.exists("firebase-key.json"):
-            cred = credentials.Certificate("firebase-key.json") 
-            firebase_admin.initialize_app(cred, {
-                'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
-            })
-        else:
-            print("⚠️ تحذير: ملف firebase-key.json مفقود، السيرفر يعمل بدون السحابة حالياً.")
-except Exception as e:
-    print(f"❌ خطأ: {e}")
-    
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase-key.json") 
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://coutabet-default-rtdb.firebaseio.com/'
+    })
+
 # 2. دالة جلب البيانات من السحابة
 def load_db():
     ref = db.reference('/') 
@@ -137,7 +131,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 class User(Base):
-    __tablename__ = "tounsibet_users"
+    __tablename__ = "alpha_users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password = Column(String)
@@ -215,7 +209,7 @@ def send_whatsapp_2fa(phone_number: str, username: str, password: str, secret_ke
     INSTANCE_ID = "instance185867"
     TOKEN = "76jnhy79la7a5bxx"
     
-    message = f"""*مرحباً بك في نظام Tounsibet Core 🔐*
+    message = f"""*مرحباً بك في نظام Alpha Core 🔐*
 
 تم إنشاء حساب الإدارة الخاص بك بنجاح.
 
@@ -225,7 +219,7 @@ def send_whatsapp_2fa(phone_number: str, username: str, password: str, secret_ke
 🛡️ *خطوات تفعيل الحماية (Google Authenticator):*
 1️⃣ افتح تطبيق Google Authenticator.
 2️⃣ اختر (إدخال مفتاح الإعداد).
-3️⃣ اسم الحساب: Tounsibet Core - {username}
+3️⃣ اسم الحساب: AlphaCore - {username}
 4️⃣ المفتاح السري:
 *{secret_key}*
 
@@ -257,29 +251,6 @@ from slowapi.errors import RateLimitExceeded
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI()
-from fastapi import Request
-from fastapi.responses import HTMLResponse
-import traceback
-
-# ==========================================
-# 🚨 كاشف الأخطاء الشامل (يُظهر سبب الـ 500 على الشاشة)
-# ==========================================
-@app.exception_handler(Exception)
-async def universal_exception_handler(request: Request, exc: Exception):
-    trace = traceback.format_exc()
-    html_content = f"""
-    <html dir="ltr">
-        <body style="background-color: #1e1e2f; color: white; font-family: monospace; padding: 20px;">
-            <h1 style="color: #ff5555;">🚨 تفاصيل انهيار السيرفر (Crash Report) 🚨</h1>
-            <p><strong>المسار المطلوب:</strong> {request.url}</p>
-            <div style="background-color: #000; padding: 15px; border-left: 5px solid #ff5555; overflow-x: auto;">
-                <pre style="color: #00ff00; font-size: 16px;">{trace}</pre>
-            </div>
-            <h3 style="color: yellow; text-align: right; font-family: Arial;">👉 يرجى تصوير أو نسخ هذا النص الأخضر وإرساله لي لأعطيك الحل الفوري.</h3>
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content, status_code=500)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -289,8 +260,9 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://coutabet",
-        "https://coutabet-player-frontend.onrender.com",
+        "https://coutabet.com",
+        "https://coutabet-backend-server.onrender.com",
+        "https://admin-coutabet.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500"
     ],
@@ -862,6 +834,53 @@ async def fix_missing_user_ids(current_user: str = Depends(get_admin_user)):
     except Exception as e:
         return {"status": "error", "message": f"حدث خطأ: {str(e)}"}
 
+class HandleHugeWinRequest(BaseModel):
+    tx_id: int
+    decision: str 
+
+@app.get("/api/admin/pending-huge-wins")
+async def get_pending_huge_wins(current_user: str = Depends(get_admin_user)):
+    db_session = SessionLocal()
+    try:
+        txs = db_session.query(Transaction).filter(Transaction.admin_username == "PENDING_HUGE_WIN").order_by(Transaction.id.desc()).all()
+        return [{"id": t.id, "target_username": t.target_username, "amount": float(t.amount), "action": t.action, "date": t.date} for t in txs]
+    except Exception as e:
+        print(f"Error fetching huge wins: {e}")
+        return []
+    finally:
+        db_session.close()
+
+@app.post("/api/admin/handle-huge-win")
+async def handle_huge_win(req: HandleHugeWinRequest, current_user: str = Depends(get_admin_user)):
+    db = load_db()
+    admin = next((u for u in db if u["username"] == current_user), None)
+    if not admin or admin.get("role") not in ["owner", "super_admin"]:
+        raise HTTPException(status_code=403, detail="صلاحية الأونر مطلوبة")
+
+    db_session = SessionLocal()
+    try:
+        tx = db_session.query(Transaction).filter(Transaction.id == req.tx_id).first()
+        if not tx or tx.admin_username != "PENDING_HUGE_WIN":
+            return JSONResponse(status_code=404, content={"detail": "الطلب غير موجود أو تمت معالجته مسبقاً"})
+
+        if req.decision == "approve":
+            async with db_lock:
+                target_user = next((u for u in db if str(u.get("username", "")).lower() == str(tx.target_username).lower()), None)
+                if target_user:
+                    target_user["balance"] = round(float(target_user.get("balance", 0)) + tx.amount, 2)
+                    save_db(db)
+            tx.admin_username = f"APPROVED_BY_{current_user.upper()}"
+        else:
+            tx.admin_username = f"REJECTED_BY_{current_user.upper()}"
+
+        db_session.commit()
+        return {"status": "success", "message": "تمت معالجة الربح الضخم بنجاح"}
+    except Exception as e:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+    finally:
+        db_session.close()
+
 @app.get("/api/admin/users")
 async def get_all_network_users(current_user: str = Depends(get_admin_user)): 
     db = load_db()
@@ -1353,7 +1372,7 @@ async def launch_casino(request: Request):
             "provider_code": data.get("provider_code"),
             "game_code": data.get("game_code"),
             "lang": "fr",
-            "lobby_url": "https://coutabet.com"
+            "lobby_url": "https://coutabet.com/#casino"
         }
         headers = {"Content-Type": "application/json"}
         endpoint = PROVIDER_ENDPOINT.rstrip('/')
@@ -1377,6 +1396,58 @@ async def launch_casino(request: Request):
         return {"error": str(e)}
 
 
+# ==========================================
+# الجدار الأمني الثاني: حماية لوحة المالك
+# ==========================================
+@app.get("/owner-login", response_class=HTMLResponse)
+async def show_login_page():
+    return """
+    <html>
+        <body style="text-align:center; margin-top:100px; font-family:Arial; background-color:#1e1e2f; color:white;">
+            <h2>تسجيل الدخول للإدارة</h2>
+            <form action="/owner-login" method="post" style="background:#2a2a40; padding:20px; width:300px; margin:auto; border-radius:10px;">
+                <input type="text" name="username" placeholder="اسم المستخدم" required style="width:90%; padding:10px; margin-bottom:15px; border-radius:5px; border:none;"><br>
+                <input type="password" name="password" placeholder="كلمة المرور" required style="width:90%; padding:10px; margin-bottom:15px; border-radius:5px; border:none;"><br>
+                <button type="submit" style="width:95%; padding:10px; background-color:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;">دخول</button>
+            </form>
+        </body>
+    </html>
+    """
+
+@app.post("/owner-login")
+@limiter.limit("5/minute")
+async def process_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    if username == ADMIN_USER and password == ADMIN_PASS:
+        request.session["is_admin"] = True
+        return RedirectResponse(url="/secure-owner", status_code=303)
+    return HTMLResponse("<h3 style='text-align:center; margin-top:100px; color:red;'>بيانات خاطئة!</h3><div style='text-align:center;'><a href='/owner-login'>العودة للمحاولة</a></div>")
+
+@app.get("/secure-owner")
+async def open_owner_panel(request: Request):
+    if not request.session.get("is_admin"):
+        return RedirectResponse(url="/owner-login")
+    return FileResponse("owner.html")
+
+@app.get("/owner-logout")
+async def logout_owner(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/owner-login")
+
+# ==========================================
+# نظام التوجيه الذكي والروابط النظيفة للإدارة
+# ==========================================
+@app.get("/", response_class=HTMLResponse)
+async def admin_home(request: Request):
+    role = request.session.get("role")
+    if role == "owner": return RedirectResponse(url="/panel/owner", status_code=303)
+    elif role == "manager": return RedirectResponse(url="/panel/manager", status_code=303)
+    elif role == "super_admin": return RedirectResponse(url="/panel/super_admin", status_code=303)
+    elif role == "admin": return RedirectResponse(url="/panel/admin", status_code=303)
+    elif role == "shop": return RedirectResponse(url="/panel/shop", status_code=303)
+    
+    
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.post("/login-router")
 @limiter.limit("5/minute")
@@ -1499,7 +1570,7 @@ async def setup_2fa(username: str):
     user["two_factor_secret"] = secret
     
     totp = pyotp.TOTP(secret)
-    uri = totp.provisioning_uri(name=username, issuer_name="Tounsibet Casino")
+    uri = totp.provisioning_uri(name=username, issuer_name="Coutabet Casino")
     
     img = qrcode.make(uri)
     buf = io.BytesIO()
@@ -2419,7 +2490,47 @@ async def launch_sportsbook(request: Request):
                 except Exception as e:
                     return {"status": "error", "details": str(e)}
                 
+class HandleHugeWinRequest(BaseModel):
+    tx_id: int
+    decision: str # 'approve' or 'reject'
 
+@app.get("/api/admin/pending-huge-wins")
+async def get_pending_huge_wins(current_user: str = Depends(get_admin_user)):
+    db_session = SessionLocal()
+    try:
+        txs = db_session.query(Transaction).filter(Transaction.admin_username == "PENDING_HUGE_WIN").all()
+        return [{"id": t.id, "target_username": t.target_username, "amount": float(t.amount), "action": t.action, "date": t.date} for t in txs]
+    finally:
+        db_session.close()
+
+@app.post("/api/admin/handle-huge-win")
+async def handle_huge_win(req: HandleHugeWinRequest, current_user: str = Depends(get_admin_user)):
+    # حماية إضافية: الأونر أو السوبر أدمن فقط من يوافق
+    db = load_db()
+    admin = next((u for u in db if u["username"] == current_user), None)
+    if not admin or admin.get("role") not in ["owner", "super_admin"]:
+        raise HTTPException(status_code=403, detail="صلاحية الأونر مطلوبة")
+
+    db_session = SessionLocal()
+    try:
+        tx = db_session.query(Transaction).filter(Transaction.id == req.tx_id).first()
+        if not tx or tx.admin_username != "PENDING_HUGE_WIN":
+            return JSONResponse(status_code=404, content={"detail": "الطلب غير موجود أو تمت معالجته"})
+
+        if req.decision == "approve":
+            async with db_lock:
+                target_user = next((u for u in db if str(u["username"]).lower() == str(tx.target_username).lower()), None)
+                if target_user:
+                    target_user["balance"] = round(float(target_user.get("balance", 0)) + tx.amount, 2)
+                    save_db(db)
+            tx.admin_username = f"APPROVED_BY_{current_user.upper()}"
+        else:
+            tx.admin_username = f"REJECTED_BY_{current_user.upper()}"
+
+        db_session.commit()
+        return {"status": "success", "message": "تمت معالجة الربح الضخم بنجاح"}
+    finally:
+        db_session.close()           
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import uuid
@@ -2906,47 +3017,3 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
                 
     save_db(db)
     return {"status": "success"}
-import traceback
-from fastapi.responses import HTMLResponse
-import os
-
-
-# 2. مسار إنشاء حساب المالك (مُزود بكاشف أخطاء)
-# ==========================================
-@app.get("/setup-first-owner", response_class=HTMLResponse)
-def setup_first_owner():
-    try:
-        db_data = load_db()
-        owner_username = "fethi"
-        owner_password = "Coutabet2026!"
-        
-        for u in db_data:
-            if str(u.get("username", "")).strip().lower() == owner_username.lower():
-                return HTMLResponse("<h2 style='color:green;'>حساب المالك موجود بالفعل! يمكنك تسجيل الدخول.</h2>")
-                
-        new_id = max([int(u.get("id", 0)) for u in db_data]) + 1 if db_data else 1
-        
-        new_owner = {
-            "id": new_id,
-            "username": owner_username,
-            "password": hash_password(owner_password),
-            "role": "owner",
-            "balance": 1000000.0,
-            "rtp": 50,
-            "is_blocked": 0,
-            "created_by": "system",
-            "last_spin_date": "",
-            "daily_deposits": 0.0,
-            "two_factor_secret": "",
-            "phone": "00000000"
-        }
-        
-        db_data.append(new_owner)
-        save_db(db_data)
-        
-        return HTMLResponse(f"<h2 style='color:green;'>تم إنشاء حساب المالك '{owner_username}' بنجاح!</h2>")
-        
-    except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        return HTMLResponse(f"<h2>حدث خطأ أثناء الاتصال بقاعدة البيانات:</h2><pre style='color:red; background:#111; padding:15px; border-radius:10px; font-size:14px; direction:ltr; text-align:left;'>{error_trace}</pre>")
