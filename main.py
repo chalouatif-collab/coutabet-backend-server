@@ -271,6 +271,7 @@ app.add_middleware(
         "https://admin-coutabet.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500"
+        "https://alphabet216.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
