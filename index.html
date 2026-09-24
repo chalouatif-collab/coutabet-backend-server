@@ -96,7 +96,7 @@
     </main>
 
     <script>
-        const BACKEND_URL = "https://coutabet-administration.onrender.com";
+        const BACKEND_URL = "";
 
         function showNotification(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -158,7 +158,7 @@
                 }
 
                 // حفظ بيانات المستخدم والـ Token
-                localStorage.setItem('alpha_user', JSON.stringify(finalData));
+                localStorage.setItem('coutabet_user', JSON.stringify(finalData));
                 if (finalData.access_token) {
                     localStorage.setItem('token', finalData.access_token);
                 }
