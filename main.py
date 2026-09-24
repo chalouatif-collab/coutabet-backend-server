@@ -424,19 +424,36 @@ async def rollback_round(request: Request, x_request_sign: Optional[str] = Heade
         "transactions": processed_rollbacks
     }
 
-# 4. دالة جلب قائمة الألعاب
 async def fetch_01tech_games():
     url = f"{ZEROONE_BASE_URL}/v2/a8r_provider.Game/List"
     payload = {"casino_id": ZEROONE_CASINO_ID}
+    
+    # تحويل البيانات إلى JSON بدون مسافات إضافية
     payload_json = json.dumps(payload, separators=(',', ':'))
-    signature = hmac.new(ZEROONE_AUTH_TOKEN.encode('utf-8'), payload_json.encode('utf-8'), hashlib.sha256).hexdigest()
+    
+    # حساب التوقيع
+    signature = hmac.new(
+        ZEROONE_AUTH_TOKEN.encode('utf-8'), 
+        payload_json.encode('utf-8'), 
+        hashlib.sha256
+    ).hexdigest()
 
-    headers = {"Content-Type": "application/json", "X-REQUEST-SIGN": signature}
+    headers = {
+        "Content-Type": "application/json", 
+        "X-REQUEST-SIGN": signature
+    }
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(url, data=payload_json, headers=headers)
-            response.raise_for_status()
+            # استخدمنا content بدلاً من data لضمان الإرسال الدقيق
+            response = await client.post(url, content=payload_json, headers=headers)
+            
+            # 💡 التعديل هنا: إذا رفض المزود الطلب، سنجلب رسالته بالتفصيل بدلاً من إخفائها
+            if response.status_code != 200:
+                error_msg = response.text
+                print(f"🚨 01.TECH REJECTED THE REQUEST: {error_msg}")
+                return {"error": f"01.tech error: {error_msg}", "games": []}
+                
             data = response.json()
             
             all_games = []
@@ -716,4 +733,4 @@ async def update_balance(req: UpdateBalanceRequest, current_user: str = Depends(
 # ==========================================
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
