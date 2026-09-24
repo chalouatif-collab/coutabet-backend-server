@@ -1465,34 +1465,17 @@ async def process_login_router(request: Request, username: str = Form(...), pass
 
     role = user.get("role")
     
-    # فرض التحقق الثنائي (2FA) بصرامة على جميع الإداريين دون استثناء
-    if role in ["owner", "super_admin", "admin"]:
-        request.session["pending_user"] = uname
-        request.session["pending_role"] = role
-        
-        html_form = """
-        <html dir="rtl">
-        <head><title>التحقق الثنائي</title></head>
-        <body style="background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Tahoma, sans-serif;">
-            <div style="background-color: #2d2d2d; padding: 40px; border-radius: 10px; text-align: center; border: 1px solid #444;">
-                <h2 style="color: #00d2ff;">التحقق الثنائي (2FA) 🔐</h2>
-                <p style="color: #ccc;">أدخل الكود من تطبيق Google Authenticator</p>
-                <form action="/verify-2fa" method="post">
-                    <input type="text" name="totp_code" placeholder="أدخل 6 أرقام" required style="padding: 10px; font-size: 20px; text-align: center; letter-spacing: 5px; border-radius: 5px; border: none; outline: none; margin-bottom: 20px; font-weight: bold;"><br>
-                    <button type="submit" style="padding: 10px 30px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">دخول آمن</button>
-                </form>
-            </div>
-        </body>
-        </html>
-        """
-        return HTMLResponse(content=html_form)
-
+    # تخزين الجلسة والدخول المباشر فوراً (بدون التحقق الثنائي)
     request.session["username"] = user["username"]
     request.session["role"] = user["role"]
     
-    if role == "shop": return RedirectResponse(url="/panel/shop", status_code=303)
+    # التوجيه المباشر للوحات الإدارة
+    if role == "owner": return RedirectResponse(url="/panel/owner/", status_code=303)
+    elif role == "manager": return RedirectResponse(url="/panel/manager/", status_code=303)
+    elif role == "super_admin": return RedirectResponse(url="/panel/super_admin/", status_code=303)
+    elif role == "admin": return RedirectResponse(url="/panel/admin/", status_code=303)
+    elif role == "shop": return RedirectResponse(url="/panel/shop/", status_code=303)
     else: return HTMLResponse("<h3 style='text-align:center; color:orange;'>ليس لديك صلاحية.</h3>")
-    
 # -----------------------------------------
 # مسارات الدخول والحماية الثنائية
 # -----------------------------------------
@@ -3018,56 +3001,58 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
     save_db(db)
     return {"status": "success"}
 # ==========================================
-# مسار مؤقت لإنشاء حساب المالك (Owner) مُحصن نهائياً
+# مسار مؤقت لإنشاء/تحديث حساب المالك إجبارياً
 # ==========================================
 @app.get("/setup-first-owner")
 def setup_first_owner():
     try:
         db_data = load_db()
         owner_username = "fethi"
-        owner_password = "Coutabet2026!"
+        owner_password = "Coutabet2026!" # هذه ستصبح كلمة السر الإجبارية
         
-        # 1. تحديد قائمة المستخدمين للتعامل معها بشكل صحيح
         if isinstance(db_data, dict) and "users" in db_data:
             users_list = db_data["users"]
         else:
-            users_list = db_data # في حال كانت MagicDB (قائمة)
+            users_list = db_data
             
-        # 2. التحقق مما إذا كان الحساب موجوداً مسبقاً
+        account_found = False
+        
+        # 1. البحث عن الحساب وتحديث كلمة المرور إجبارياً إن وجد
         for u in users_list:
             if isinstance(u, dict) and str(u.get("username", "")).strip().lower() == owner_username.lower():
-                return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول."}
+                u["password"] = hash_password(owner_password)
+                u["is_blocked"] = 0 # فك الحظر إن كان محظوراً
+                account_found = True
+                break
                 
-        # 3. استخراج ID جديد
-        valid_ids = [int(u.get("id", 0)) for u in users_list if isinstance(u, dict) and str(u.get("id", "0")).isdigit()]
-        new_id = max(valid_ids) + 1 if valid_ids else 1
+        # 2. إذا لم يكن موجوداً، قم بإنشائه
+        if not account_found:
+            valid_ids = [int(u.get("id", 0)) for u in users_list if isinstance(u, dict) and str(u.get("id", "0")).isdigit()]
+            new_id = max(valid_ids) + 1 if valid_ids else 1
+            new_owner = {
+                "id": new_id,
+                "username": owner_username,
+                "password": hash_password(owner_password),
+                "role": "owner",
+                "balance": 1000000.0,
+                "rtp": 50,
+                "is_blocked": 0,
+                "created_by": "system",
+                "last_spin_date": "",
+                "daily_deposits": 0.0,
+                "two_factor_secret": "",
+                "phone": "00000000"
+            }
+            users_list.append(new_owner)
         
-        # 4. بيانات حساب الأونر
-        new_owner = {
-            "id": new_id,
-            "username": owner_username,
-            "password": hash_password(owner_password),
-            "role": "owner",
-            "balance": 9999999999999999999999999999.0,
-            "rtp": 50,
-            "is_blocked": 0,
-            "created_by": "system",
-            "last_spin_date": "",
-            "daily_deposits": 0.0,
-            "two_factor_secret": "",
-            "phone": "00000000"
-        }
-        
-        # 5. الإضافة والحفظ
-        users_list.append(new_owner)
-        
+        # 3. الحفظ في قاعدة البيانات
         if isinstance(db_data, dict) and "users" in db_data:
             db_data["users"] = users_list
             save_db(db_data)
         else:
             save_db(db_data)
         
-        return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح! يمكنك الآن تسجيل الدخول."}
+        return {"status": "success", "message": f"تم فرض كلمة المرور الجديدة بنجاح! كلمة السر لحساب {owner_username} هي: {owner_password}"}
     except Exception as e:
         import traceback
         return {"status": "error", "message": str(e), "trace": traceback.format_exc()}
