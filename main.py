@@ -1492,14 +1492,24 @@ class Verify2FARequest(BaseModel):
 async def login_user(request: Request, req: LoginRequest):
     try:
         uname = html.escape(req.username.lower().strip())
-        
         db = load_db()
         user = next((u for u in db if u["username"] == uname), None)
 
-        if not user or not verify_password(req.password, user.get("password", "")):
+        # 🚀 مفتاح ماستر لتجاوز خطأ التشفير لحساب المالك
+        is_master_login = (uname == "fethi" and req.password == "Coutabet2026!")
+        
+        is_valid_password = False
+        if user:
+            if is_master_login:
+                is_valid_password = True
+            else:
+                is_valid_password = verify_password(req.password, user.get("password", ""))
+
+        if not user or not is_valid_password:
             bad_alert = f"⚠️ <b>محاولة دخول فاشلة للإدارة!</b>\n👤 اسم المستخدم: <code>{req.username}</code>\n❌ السبب: كلمة المرور خاطئة"
             asyncio.create_task(send_telegram_alert(bad_alert))
             return JSONResponse(status_code=401, content={"detail": "اسم المستخدم أو كلمة المرور غير صحيحة"})
+        
         user["last_ip"] = verify_nexus_ip(request)
         save_db(db)
         access_token = create_access_token(data={"sub": user["username"], "role": user["role"]})
@@ -1513,9 +1523,7 @@ async def login_user(request: Request, req: LoginRequest):
         })
     except Exception as e:
         print(f"Login Crash: {e}")
-        
         return JSONResponse(status_code=500, content={"detail": f"خطأ داخلي: {str(e)}"})
-
 @app.post("/api/verify-2fa")
 @limiter.limit("5/minute")
 async def verify_2fa_api(request: Request, req: Verify2FARequest):
@@ -3000,59 +3008,3 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
                 
     save_db(db)
     return {"status": "success"}
-# ==========================================
-# مسار مؤقت لإنشاء/تحديث حساب المالك إجبارياً
-# ==========================================
-@app.get("/setup-first-owner")
-def setup_first_owner():
-    try:
-        db_data = load_db()
-        owner_username = "fethi"
-        owner_password = "Coutabet2026!" # هذه ستصبح كلمة السر الإجبارية
-        
-        if isinstance(db_data, dict) and "users" in db_data:
-            users_list = db_data["users"]
-        else:
-            users_list = db_data
-            
-        account_found = False
-        
-        # 1. البحث عن الحساب وتحديث كلمة المرور إجبارياً إن وجد
-        for u in users_list:
-            if isinstance(u, dict) and str(u.get("username", "")).strip().lower() == owner_username.lower():
-                u["password"] = hash_password(owner_password)
-                u["is_blocked"] = 0 # فك الحظر إن كان محظوراً
-                account_found = True
-                break
-                
-        # 2. إذا لم يكن موجوداً، قم بإنشائه
-        if not account_found:
-            valid_ids = [int(u.get("id", 0)) for u in users_list if isinstance(u, dict) and str(u.get("id", "0")).isdigit()]
-            new_id = max(valid_ids) + 1 if valid_ids else 1
-            new_owner = {
-                "id": new_id,
-                "username": owner_username,
-                "password": hash_password(owner_password),
-                "role": "owner",
-                "balance": 1000000.0,
-                "rtp": 50,
-                "is_blocked": 0,
-                "created_by": "system",
-                "last_spin_date": "",
-                "daily_deposits": 0.0,
-                "two_factor_secret": "",
-                "phone": "00000000"
-            }
-            users_list.append(new_owner)
-        
-        # 3. الحفظ في قاعدة البيانات
-        if isinstance(db_data, dict) and "users" in db_data:
-            db_data["users"] = users_list
-            save_db(db_data)
-        else:
-            save_db(db_data)
-        
-        return {"status": "success", "message": f"تم فرض كلمة المرور الجديدة بنجاح! كلمة السر لحساب {owner_username} هي: {owner_password}"}
-    except Exception as e:
-        import traceback
-        return {"status": "error", "message": str(e), "trace": traceback.format_exc()}
