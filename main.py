@@ -43,6 +43,12 @@ class SportsLaunchRequest(BaseModel):
 
 import os
 
+
+# ================= إعدادات 01.tech Aggregator =================
+ZEROONE_AUTH_TOKEN = os.getenv("ZEROONE_AUTH_TOKEN", "")
+ZEROONE_BASE_URL = os.getenv("ZEROONE_BASE_URL", "")
+ZEROONE_CASINO_ID = os.getenv("ZEROONE_CASINO_ID", "alphabet1")
+
 # ==========================================
 # 🎮 إعدادات الكازينو (NexusGGR)
 # ==========================================
@@ -3008,3 +3014,511 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
                 
     save_db(db)
     return {"status": "success"}
+
+import hmac
+import hashlib
+from fastapi import FastAPI, Request, HTTPException, Header
+from pydantic import BaseModel
+from typing import List, Optional, Any
+
+app = FastAPI()
+
+# مفتاح المصادقة الذي استلمته من Vadim (يُفضل وضعه في متغيرات البيئة .env)
+AUTH_TOKEN = ZEROONE_AUTH_TOKEN
+
+def verify_signature(body: bytes, signature: Optional[str]) -> bool:
+    """التحقق من صحة التوقيع القادم من المزود عبر هيدر X-REQUEST-SIGN"""
+    if not signature:
+        return False
+    computed_sig = hmac.new(
+        AUTH_TOKEN.encode('utf-8'),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(computed_sig, signature)
+
+@app.post("/v2/provider_a8r.Round/BetWin")
+async def bet_win(request: Request, x_request_sign: Optional[str] = Header(None)):
+    body_bytes = await request.body()
+    
+    # التحقق من التوقيع الأمني
+    if not verify_signature(body_bytes, x_request_sign):
+        raise HTTPException(status_code=400, detail="Invalid Signature")
+    
+    data = await request.json()
+    
+    # بيانات الطلب المستلمة من المزود
+    account_id = data.get("account_id")
+    currency = data.get("currency")
+    round_id = data.get("round_id")
+    transactions = data.get("transactions", [])
+    
+    # 💡 هنا تقوم بمعالجة العمليات المالية (خصم الرهان أو إضافة الفوز) في قاعدة بياناتك
+    # ومراعاة أن تكون العملية Idempotent (أي تجنب تكرار المعالجة لو أرسل المزود نفس id_provider مرتين)
+    
+    processed_transactions = []
+    for tx in transactions:
+        id_provider = tx.get("id_provider")
+        amount = tx.get("amount")
+        tx_type = tx.get("type") # "bet" أو "win"
+        
+        # بعد تنفيذ العملية في قاعدة البيانات، قم بتوليد معرف فريد للمعاملة لديك
+        aggregator_tx_id = "7c096779-5a5c-4605-a976-3e19e6ee7fce" # مثال
+        
+        processed_transactions.append({
+            "bonus_amount": "0.00",
+            "id": aggregator_tx_id,
+            "id_provider": id_provider
+        })
+    
+    # رصيد اللاعب الجديد بعد التحديث
+    new_balance = "100.00" 
+
+    return {
+        "balance": new_balance,
+        "round_id": round_id,
+        "transactions": processed_transactions
+    }
+
+@app.post("/v2/provider_a8r.Round/Finish")
+async def finish_round(request: Request, x_request_sign: Optional[str] = Header(None)):
+    body_bytes = await request.body()
+    if not verify_signature(body_bytes, x_request_sign):
+        raise HTTPException(status_code=400, detail="Invalid Signature")
+    
+    data = await request.json()
+    round_id = data.get("round_id")
+    
+    # 💡 إغلاق الجولة أو دورة اللعب في قاعدة بياناتك
+    
+    return {
+        "balance": "100.00"
+    }
+
+@app.post("/v2/provider_a8r.Round/Rollback")
+async def rollback_round(request: Request, x_request_sign: Optional[str] = Header(None)):
+    body_bytes = await request.body()
+    if not verify_signature(body_bytes, x_request_sign):
+        raise HTTPException(status_code=400, detail="Invalid Signature")
+    
+    data = await request.json()
+    transactions = data.get("transactions", [])
+    
+    processed_rollbacks = []
+    for tx in transactions:
+        id_provider = tx.get("id_provider")
+        original_id_provider = tx.get("original_id_provider")
+        
+        # 💡 إلغاء المعاملة السابقة (التي تحمل original_id_provider) وإرجاع الأموال إن وجدت
+        
+        processed_rollbacks.append({
+            "id": "76033e09-6207-44a1-b40a-840107104a15", # معرف المعاملة لديك أو فارغ إن لم تكن موجودة
+            "id_provider": id_provider
+        })
+        
+    return {
+        "balance": "100.00",
+        "round_id": "5789d44e-76ca-4458-86e4-6861c73bff2a",
+        "transactions": processed_rollbacks
+    }
+    
+    
+import hmac
+import hashlib
+import uuid
+from fastapi import FastAPI, Request, HTTPException, Header
+from typing import Optional
+from google.cloud import firestore
+
+app = FastAPI()
+
+# ⚠️ استبدل هذا الرمز بالـ AUTH_TOKEN الحقيقي الذي أرسله لك Vadim
+AUTH_TOKEN = ZEROONE_AUTH_TOKEN
+
+def verify_signature(body: bytes, signature: Optional[str]) -> bool:
+    """التحقق من صحة التوقيع الأمني باستخدام HMAC-SHA256 عبر هيدر X-REQUEST-SIGN"""
+    if not signature:
+        return False
+    computed_sig = hmac.new(
+        AUTH_TOKEN.encode('utf-8'),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(computed_sig, signature)
+
+@app.post("/v2/provider_a8r.Round/BetWin")
+async def bet_win(request: Request, x_request_sign: Optional[str] = Header(None)):
+    body_bytes = await request.body()
+    
+    # التحقق من التوقيع الأمني قبل معالجة الطلب[cite: 17]
+    if not verify_signature(body_bytes, x_request_sign):
+        raise HTTPException(status_code=400, detail="Invalid Signature")
+    
+    data = await request.json()
+    account_id = str(data.get("account_id"))[cite: 17]
+    round_id = data.get("round_id")[cite: 17]
+    transactions = data.get("transactions", [])[cite: 17]
+    
+    db = firestore.Client()
+    
+    @firestore.transactional
+    def process_transaction(transaction, account_id, txs):
+        player_ref = db.collection("users").document(account_id)
+        player_doc = player_ref.get(transaction=transaction)
+        
+        if not player_doc.exists:
+            raise HTTPException(status_code=404, detail="Player not found")
+            
+        player_data = player_doc.to_dict()
+        current_balance = float(player_data.get("balance", 0.0))
+        
+        processed_transactions = []
+        
+        for tx in txs:
+            id_provider = tx.get("id_provider")[cite: 17]
+            amount = float(tx.get("amount"))[cite: 17]
+            tx_type = tx.get("type") # نوع الحركة: "bet" (خصم) أو "win" (إضافة)[cite: 17]
+            
+            # منع تكرار المعاملات (Idempotency) حسب متطلبات التوثيق[cite: 17]
+            tx_ref = db.collection("casino_transactions").document(id_provider)
+            existing_tx = tx_ref.get(transaction=transaction)
+            
+            if existing_tx.exists:
+                old_data = existing_tx.to_dict()
+                processed_transactions.append({
+                    "bonus_amount": "0.00",
+                    "id": old_data["aggregator_tx_id"],
+                    "id_provider": id_provider
+                })
+                continue
+            
+            # تنفيذ العمليات المالية بناءً على نوع الحركة[cite: 17]
+            if tx_type == "bet":
+                if current_balance < amount:
+                    raise HTTPException(status_code=400, detail="Insufficient funds")
+                current_balance -= amount
+            elif tx_type == "win":
+                current_balance += amount
+                
+            aggregator_tx_id = str(uuid.uuid4())
+            
+            # حفظ المعاملة في قاعدة البيانات لحمايتها من التكرار
+            transaction.set(tx_ref, {
+                "account_id": account_id,
+                "amount": amount,
+                "type": tx_type,
+                "aggregator_tx_id": aggregator_tx_id,
+                "round_id": round_id,
+                "timestamp": firestore.SERVER_TIMESTAMP
+            })
+            
+            processed_transactions.append({
+                "bonus_amount": "0.00",
+                "id": aggregator_tx_id,
+                "id_provider": id_provider
+            })
+        
+        # تحديث الرصيد الجديد للاعب
+        transaction.update(player_ref, {"balance": current_balance})
+        return current_balance, processed_transactions
+
+    transaction = db.transaction()
+    try:
+        new_balance, processed_transactions = process_transaction(transaction, account_id, transactions)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    return {
+        "balance": f"{new_balance:.2f}",
+        "round_id": round_id,
+        "transactions": processed_transactions
+    }
+
+@app.post("/v2/provider_a8r.Round/Finish")
+async def finish_round(request: Request, x_request_sign: Optional[str] = Header(None)):
+    body_bytes = await request.body()
+    if not verify_signature(body_bytes, x_request_sign):
+        raise HTTPException(status_code=400, detail="Invalid Signature")
+    
+    data = await request.json()
+    account_id = str(data.get("account_id"))[cite: 17]
+    round_id = data.get("round_id")[cite: 17]
+    
+    db = firestore.Client()
+    player_ref = db.collection("users").document(account_id)
+    player_doc = player_ref.get()
+    
+    current_balance = float(player_doc.to_dict().get("balance", 0.0)) if player_doc.exists else 0.0
+    
+    # إنهاء الجولة وإرجاع رصيد اللاعب الحالي[cite: 17]
+    return {
+        "balance": f"{current_balance:.2f}"
+    }
+
+@app.post("/v2/provider_a8r.Round/Rollback")
+async def rollback_round(request: Request, x_request_sign: Optional[str] = Header(None)):
+    body_bytes = await request.body()
+    if not verify_signature(body_bytes, x_request_sign):
+        raise HTTPException(status_code=400, detail="Invalid Signature")
+    
+    data = await request.json()
+    account_id = str(data.get("account_id"))[cite: 17]
+    round_id_provider = data.get("round_id_provider")[cite: 17]
+    transactions = data.get("transactions", [])[cite: 17]
+    
+    db = firestore.Client()
+    
+    @firestore.transactional
+    def process_rollback(transaction, account_id, txs):
+        player_ref = db.collection("users").document(account_id)
+        player_doc = player_ref.get(transaction=transaction)
+        
+        if not player_doc.exists:
+            raise HTTPException(status_code=404, detail="Player not found")
+            
+        player_data = player_doc.to_dict()
+        current_balance = float(player_data.get("balance", 0.0))
+        
+        processed_rollbacks = []
+        
+        for tx in txs:
+            id_provider = tx.get("id_provider")[cite: 17]
+            original_id_provider = tx.get("original_id_provider")[cite: 17]
+            
+            # البحث عن المعاملة الأصلية المراد إلغاؤها
+            orig_tx_ref = db.collection("casino_transactions").document(original_id_provider)
+            orig_tx_doc = orig_tx_ref.get(transaction=transaction)
+            
+            aggregator_rollback_id = str(uuid.uuid4())
+            
+            if orig_tx_doc.exists:
+                orig_data = orig_tx_doc.to_dict()
+                amount = float(orig_data["amount"])
+                orig_type = orig_data["type"]
+                
+                # عكس التأثير المالي للمعاملة بناءً على نوعها السابق
+                if orig_type == "bet":
+                    current_balance += amount # إعادة الأموال المُخصومة للرهان
+                elif orig_type == "win":
+                    current_balance -= amount # خصم الأموال المضافة للفوز بالخطأ
+                    
+                # تسجيل عملية السترجاع (Rollback) في قاعدة البيانات
+                transaction.set(db.collection("casino_transactions").document(id_provider), {
+                    "account_id": account_id,
+                    "type": "rollback",
+                    "original_id_provider": original_id_provider,
+                    "aggregator_tx_id": aggregator_rollback_id,
+                    "timestamp": firestore.SERVER_TIMESTAMP
+                })
+            
+            processed_rollbacks.append({
+                "id": aggregator_rollback_id if orig_tx_doc.exists else "",
+                "id_provider": id_provider
+            })
+            
+        transaction.update(player_ref, {"balance": current_balance})
+        return current_balance, processed_rollbacks
+
+    transaction = db.transaction()
+    try:
+        new_balance, processed_rollbacks = process_rollback(transaction, account_id, transactions)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    return {
+        "balance": f"{new_balance:.2f}",
+        "round_id": round_id_provider,
+        "transactions": processed_rollbacks
+    }
+    
+    import httpx
+import hmac
+import hashlib
+import json
+
+@app.post("/api/get-01tech-games")
+async def get_01tech_games():
+    url = f"{ZEROONE_BASE_URL}/v2/a8r_provider.Game/List"
+    
+    payload = {
+        "casino_id": ZEROONE_CASINO_ID
+    }
+    
+    # حساب التوقيع الأمني (HMAC-SHA256)
+    # التوثيق يطلب حساب التوقيع على جسد الطلب (request body) باستخدام AUTH_TOKEN
+    payload_json = json.dumps(payload, separators=(',', ':'))
+    signature = hmac.new(
+        ZEROONE_AUTH_TOKEN.encode('utf-8'),
+        payload_json.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-REQUEST-SIGN": signature 
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            
+            # استخراج الألعاب من الرد
+            # الرد يحتوي على قائمة "providers"، وكل provider يحتوي على قائمة "games"
+            all_games = []
+            if "providers" in data:
+                for provider in data["providers"]:
+                    if "games" in provider:
+                        for game in provider["games"]:
+                            # تهيئة البيانات لتناسب الواجهة
+                            game_data = {
+                                "id": game.get("id"),
+                                "name": game.get("title"),
+                                "provider": game.get("provider"),
+                                # يمكنك إضافة معالجة للصور هنا بناءً على image_assets.base_url
+                            }
+                            all_games.append(game_data)
+
+            return {"games": all_games}
+        except Exception as e:
+            print(f"Error fetching 01.tech games: {e}")
+            return {"error": str(e), "games": []}
+        
+        import httpx
+import hmac
+import hashlib
+import json
+
+async def fetch_01tech_games():
+    # مسار جلب قائمة الألعاب بناءً على التوثيق[cite: 14]
+    url = f"{ZEROONE_BASE_URL}/v2/a8r_provider.Game/List"
+    
+    # المعاملات المطلوبة في جسم الطلب[cite: 14]
+    payload = {
+        "casino_id": ZEROONE_CASINO_ID
+    }
+    
+    # تحويل الـ payload إلى سلسلة نصية JSON بدون مسافات إضافية
+    payload_json = json.dumps(payload, separators=(',', ':'))
+    
+    # حساب التوقيع الأمني HMAC-SHA256 باستخدام التوكن[cite: 14]
+    signature = hmac.new(
+        ZEROONE_AUTH_TOKEN.encode('utf-8'),
+        payload_json.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    # إعداد الهيدر متضمناً التوقيع[cite: 14]
+    headers = {
+        "Content-Type": "application/json",
+        "X-REQUEST-SIGN": signature 
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # نرسل data=payload_json بدلاً من json=payload لضمان تطابق التشفير
+            response = await client.post(url, data=payload_json, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            
+            all_games = []
+            
+            # جلب الرابط الأساسي للصور من الكائن image_assets[cite: 14]
+            base_image_url = ""
+            if "image_assets" in data and "base_url" in data["image_assets"]:
+                base_image_url = data["image_assets"]["base_url"]
+
+            # استخراج الألعاب من مصفوفة providers[cite: 14]
+            if "providers" in data:
+                for provider in data["providers"]:
+                    provider_name = provider.get("name", "01TECH")
+                    if "games" in provider:
+                        for game in provider["games"]:
+                            
+                            # بناء رابط الصورة الكامل (نختار الصورة المربعة أو الأفقية)[cite: 14]
+                            img_url = ""
+                            if "images" in game:
+                                img_path = game["images"].get("square") or game["images"].get("horizontal")
+                                if img_path:
+                                    img_url = f"{base_image_url}{img_path}"
+
+                            # تنسيق اللعبة لتتوافق مع ما تتوقعه الواجهة الأمامية لديك
+                            game_data = {
+                                "game_code": game.get("id"),
+                                "game_name": game.get("title"),
+                                "provider": provider_name,
+                                "banner": img_url,
+                                "has_demo": game.get("has_demo", False)
+                            }
+                            all_games.append(game_data)
+
+            return {"games": all_games}
+            
+        except Exception as e:
+            print(f"Error fetching 01.tech games: {e}")
+            return {"error": str(e), "games": []}
+        
+        import uuid
+
+@app.post("/api/launch-01tech-game")
+async def launch_01tech_game(request: Request):
+    data = await request.json()
+    
+    # استلام معرف اللعبة ومعرف اللاعب من الواجهة
+    game_id = data.get("game_id")
+    account_id = data.get("account_id") # يجب أن ترسله من الواجهة بناءً على جلسة اللاعب المسجل
+    
+    # 1. إنشاء Session ID فريد لهذه الجلسة
+    # (هذا الـ ID هو نفسه الذي سيرسله المزود لك لاحقاً في طلبات BetWin و Finish لتتبع اللاعب)
+    session_id = str(uuid.uuid4())
+    
+    # مسار تشغيل اللعبة بالمال الحقيقي حسب بروتوكول 01.tech
+    url = f"{ZEROONE_BASE_URL}/v2/a8r_provider.Launcher/Real"
+    
+    # 2. تجهيز البيانات المطلوبة (Payload)
+    payload = {
+        "casino_id": ZEROONE_CASINO_ID,
+        "game_id": game_id,
+        "account_id": str(account_id),
+        "currency": "TND", # أو العملة الديناميكية الخاصة باللاعب
+        "session_id": session_id,
+        "language": "fr", # لغة اللعبة
+        "return_url": "https://coutabet.com/" # الرابط الذي سيعود إليه اللاعب عند إغلاق اللعبة
+    }
+    
+    # تحويل البيانات إلى JSON بدون مسافات لضمان صحة التشفير
+    payload_json = json.dumps(payload, separators=(',', ':'))
+    
+    # 3. حساب التوقيع الأمني
+    signature = hmac.new(
+        ZEROONE_AUTH_TOKEN.encode('utf-8'),
+        payload_json.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-REQUEST-SIGN": signature 
+    }
+
+    # 4. إرسال الطلب وإرجاع رابط اللعبة
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, data=payload_json, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            
+            # استخراج رابط إطلاق اللعبة
+            game_url = result.get("url")
+            
+            if not game_url:
+                return {"error": "لم يتم إرجاع رابط اللعبة من المزود"}
+                
+            return {"game_url": game_url}
+            
+        except Exception as e:
+            print(f"Error launching 01.tech game: {e}")
+            return {"error": str(e)}
