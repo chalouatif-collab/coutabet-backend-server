@@ -3017,3 +3017,44 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
                 
     save_db(db)
     return {"status": "success"}
+# ==========================================
+# مسار مؤقت لإنشاء حساب المالك الأول (Owner)
+# ==========================================
+@app.get("/setup-first-owner")
+def setup_first_owner():
+    try:
+        db_data = load_db()
+        owner_username = "fethi"
+        owner_password = "Coutabet2026!"
+        
+        # التحقق مما إذا كان الحساب موجوداً مسبقاً
+        for u in db_data:
+            if str(u.get("username", "")).strip().lower() == owner_username.lower():
+                return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول."}
+                
+        # تحديد ID جديد
+        new_id = max([int(u.get("id", 0)) for u in db_data]) + 1 if db_data else 1
+        
+        # بيانات حساب الأونر
+        new_owner = {
+            "id": new_id,
+            "username": owner_username,
+            "password": hash_password(owner_password), # تشفير كلمة السر باستخدام الدالة الموجودة في ملفك
+            "role": "owner",
+            "balance": 99999999999999.0, # مليون دينار رصيد افتراضي
+            "rtp": 50,
+            "is_blocked": 0,
+            "created_by": "system",
+            "last_spin_date": "",
+            "daily_deposits": 0.0,
+            "two_factor_secret": "",
+            "phone": "00000000"
+        }
+        
+        db_data.append(new_owner)
+        save_db(db_data) # حفظ البيانات في Firebase
+        
+        return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح! يمكنك الآن تسجيل الدخول."}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "message": str(e), "trace": traceback.format_exc()}
