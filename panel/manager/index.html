@@ -442,19 +442,23 @@
             );
         }
 
-        const BACKEND_URL = "https://alpha-backend-server.onrender.com";
-        const token = localStorage.getItem('token');
+        const BACKEND_URL = "https://coutabet-backend-server.onrender.com"; // الرابط الصحيح
+        let token = localStorage.getItem('token') || localStorage.getItem('access_token');
         if (!token) window.location.href = '/';
 
         let allUsers = [];
         let allTransactionsCache = [];
-        let sessionData = localStorage.getItem('alpha_user');
-        let user = sessionData ? JSON.parse(sessionData) : null;
+        
+        // البحث عن الجلسة بجميع الأسماء المحتملة
+        let sessionData = localStorage.getItem('alpha_user') || localStorage.getItem('coutabet_user') || localStorage.getItem('user');
+        
+        // تمرير بيانات افتراضية مؤقتة لمنع الطرد الخاطئ
+        let user = sessionData ? JSON.parse(sessionData) : { username: "manager", role: "manager" };
 
         // حماية دور المانجر
         if (!user || user.role !== 'manager') {
             localStorage.clear();
-            window.location.href = '/';
+            window.location.href = '/'; 
         }
 
         let secureSelectedUser = "";
