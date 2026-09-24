@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha Bet - Mini Owner Centre</title>
+    <title>COUTABET - Mini Owner Centre</title>
 
     <!-- Bootstrap 5 & Confetti & FontAwesome & Google Fonts -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -167,7 +167,7 @@
     <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="sidebar-menu">
         <div class="offcanvas-header border-bottom border-dark px-3 py-2">
             <h6 class="offcanvas-title text-owner fw-bold" style="font-size: 0.85rem;"><i class="fa-solid fa-crown"></i>
-                ALPHA OWNER</h6>
+                COUTABET OWNER</h6>
             <button type="button" class="btn-close btn-close-white btn-sm shadow-none"
                 data-bs-dismiss="offcanvas"></button>
         </div>
@@ -233,8 +233,8 @@
                     type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-menu" style="font-size: 0.75rem;">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <span class="fw-bold text-owner tracking-wide d-none d-md-inline" style="font-size: 0.8rem;">ALPHA <span
-                        class="text-white fw-light">OWNER</span></span>
+                <span class="fw-bold text-owner tracking-wide d-none d-md-inline" style="font-size: 0.8rem;">COUTA<span
+                        class="text-white fw-light">BET</span></span>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button id="audio-enable-btn" onclick="enableAudio()" class="btn btn-mini btn-outline-warning py-0 px-2"
@@ -388,10 +388,6 @@
                                     <button onclick="changeUserPasswordFromOwner()"
                                         class="btn btn-mini btn-info text-dark fw-bold px-2 py-1"
                                         style="font-size: 0.7rem;">تغيير السر</button>
-                                    <button onclick="resetUser2FA()"
-                                        class="btn btn-mini btn-warning text-dark fw-bold px-2 py-1"
-                                        style="font-size: 0.7rem;" title="إعادة تعيين 2FA"><i
-                                            class="fa-solid fa-key"></i> 2FA</button>
                                 </div>
                             </section>
 
@@ -788,7 +784,7 @@
             );
         }
 
-        const BACKEND_URL = "https://coutabet-backend-server.onrender.com";
+        const BACKEND_URL = "https://alpha-backend-server.onrender.com";
 
         const token = localStorage.getItem('token');
         if (!token) window.location.href = '/owner-login';
@@ -865,32 +861,6 @@
             } catch (e) { console.error(e); }
         }
 
-        async function resetUser2FA() {
-            const target = secureSelectedUser;
-            if (!target) return showNotification('الرجاء تحديد حساب أولاً!', 'error');
-
-            if (!confirm(`هل أنت متأكد من إعادة تعيين مفتاح 2FA للحساب: ${target}؟ سيتم إلغاء المفتاح القديم ولن يتمكن من الدخول به.`)) return;
-
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/admin/reset-2fa`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ admin_username: user.username, target_username: target })
-                });
-                const data = await res.json();
-
-                if (res.ok) {
-                    // عرض المفتاح الجديد في نافذة Prompt ليتمكن المدير من نسخه بسهولة
-                    prompt(`تم إعادة تعيين 2FA بنجاح للحساب ${target}.\n\nانسخ هذا المفتاح وأرسله للمستخدم فوراً (لن يظهر مرة أخرى):`, data.new_secret);
-                    showNotification('تم إعادة تعيين المفتاح!', 'success');
-                } else {
-                    showNotification(data.detail || 'Erreur', 'error');
-                }
-            } catch (e) {
-                showNotification('Erreur de connexion', 'error');
-            }
-        }
-
         function renderUsers(data) {
             const container = document.getElementById('owner-network-tbody');
             if (!container) return;
@@ -912,17 +882,6 @@
                 const userRole = u.role ? u.role.toUpperCase() : 'PLAYER';
                 const statusDot = u.is_blocked === 1 ? 'bg-danger' : 'bg-success';
 
-                const safeSecret = escapeHTML(u.two_factor_secret || '');
-                const secretBadge = safeSecret
-                    ? `<div class="d-inline-flex align-items-center bg-black border border-dark rounded px-1 ms-1" onclick="event.stopPropagation()">
-                       <i class="fa-solid fa-key text-success me-1" style="font-size: 0.55rem;"></i>
-                       <input type="text" value="${safeSecret}" class="bg-transparent border-0 text-warning font-mono p-0 text-center" style="width: 60px; font-size: 0.6rem; outline: none;" readonly>
-                       <button onclick="copySecretCode('${safeSecret}', event)" class="btn btn-sm btn-link text-success p-0 ms-1 shadow-none" style="font-size: 0.6rem;">
-                           <i class="fa-regular fa-copy"></i>
-                       </button>
-                   </div>`
-                    : ``;
-
                 const safePhone = escapeHTML(u.phone || '');
                 const phoneBadge = safePhone !== ""
                     ? `<span class="badge bg-black text-info border border-dark ms-1 px-1 py-0" style="font-size: 0.6rem;"><i class="fa-solid fa-phone"></i> ${safePhone}</span>`
@@ -939,7 +898,7 @@
                             <div class="text-white fw-bold mb-0 d-flex align-items-center flex-wrap gap-1" style="font-size: 0.75rem;">
                                 ${usernameClean} 
                                 <span class="badge bg-dark border border-dark text-secondary font-mono" style="font-size: 0.6rem; padding: 1px 3px;">ID: ${u.id || 'N/A'}</span>
-                                ${secretBadge} ${phoneBadge}
+                                ${phoneBadge}
                             </div>
                             <div class="text-info font-mono" style="font-size: 0.6rem;">${userRole} • By: ${createdByClean}</div>
                         </div>
@@ -1744,13 +1703,6 @@ async function approveDeposit(ticketId, username) {
             } catch (error) {
                 alert("❌ Erreur réseau");
             }
-        }
-
-        function copySecretCode(secret, event) {
-            event.stopPropagation();
-            navigator.clipboard.writeText(secret).then(() => {
-                showNotification(`Copié: ${secret}`, 'success');
-            }).catch(err => { showNotification('Erreur', 'error'); });
         }
 
         function viewReceiptImage(index) {

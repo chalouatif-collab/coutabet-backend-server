@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha Core - Mini Super Admin Panel</title>
+    <title>COUTABET - Super Admin Panel</title>
 
     <!-- Bootstrap 5 CSS & FontAwesome & Google Fonts -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -183,7 +183,7 @@
     <!-- القائمة الجانبية (للهاتف - Offcanvas) -->
     <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="mobileSidebar">
         <div class="offcanvas-header border-bottom border-dark px-3 py-2">
-            <h6 class="offcanvas-title text-emerald fw-bold" style="font-size: 0.85rem;"><i class="fa-solid fa-bars-staggered"></i> ALPHA SUPER</h6>
+            <h6 class="offcanvas-title text-emerald fw-bold" style="font-size: 0.85rem;"><i class="fa-solid fa-bars-staggered"></i> COUTABET SUPER</h6>
             <button type="button" class="btn-close btn-close-white btn-sm shadow-none" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body d-flex flex-column justify-content-between p-2.5">
@@ -359,7 +359,7 @@
         let allAdmins = [];
         function escapeHTML(str) {
             if (!str) return '';
-            return str.toString().escapeHTML(/[&<>'"]/g,
+            return str.toString().replace(/[&<>'"]/g,
                 tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             );
         }
@@ -487,17 +487,6 @@
                 const safePhone = escapeHTML(u.phone || '');
                 const phoneBadge = safePhone ? `<span class="badge bg-black text-info border border-dark ms-1 px-1 py-0" style="font-size: 0.6rem;"><i class="fa-solid fa-phone"></i> ${safePhone}</span>` : '';
                 
-                const safeSecret = escapeHTML(u.two_factor_secret || '');
-                const secretBadge = safeSecret
-                ? `<div class="d-inline-flex align-items-center bg-black border border-dark rounded px-1 ms-1" onclick="event.stopPropagation()">
-                       <i class="fa-solid fa-key text-success me-1" style="font-size: 0.55rem;"></i>
-                       <input type="text" value="${safeSecret}" class="bg-transparent border-0 text-warning font-mono p-0 text-center" style="width: 60px; font-size: 0.6rem; outline: none;" readonly>
-                       <button onclick="copySecretCode('${safeSecret}', event)" class="btn btn-sm btn-link text-success p-0 ms-1 shadow-none" style="font-size: 0.6rem;">
-                           <i class="fa-regular fa-copy"></i>
-                       </button>
-                   </div>`
-                : ``;
-                
                 const safeId = escapeHTML(u.id || 'N/A');
 
                 listContainer.innerHTML += `
@@ -511,7 +500,7 @@
                                 <div class="text-white fw-bold mb-0 d-flex align-items-center flex-wrap gap-1" style="font-size: 0.75rem;">
                                     ${usernameClean} 
                                     <span class="badge bg-dark border border-dark text-secondary font-mono" style="font-size: 0.6rem; padding: 1px 3px;">ID: ${safeId}</span>
-                                    ${secretBadge} ${phoneBadge}
+                                    ${phoneBadge}
                                 </div>
                                 <div class="text-emerald font-mono" style="font-size: 0.6rem;">${userRole} • RTP: ${userRtp}%</div>
                             </div>
@@ -708,7 +697,7 @@
                 const isCharge = t.action === 'charge'; 
                 const color = isCharge ? 'text-success' : 'text-danger';
                 const sign = isCharge ? '+' : '-';
-                const targetName = (t.target_username || t.target || 'مجهول').escapeHTML(/</g, "&lt;").escapeHTML(/>/g, "&gt;");
+                const targetName = escapeHTML(t.target_username || t.target || 'مجهول');
                 
                 html += `
                     <div class="bg-black border border-dark rounded-2 p-2 d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
@@ -722,32 +711,6 @@
                     </div>`;
             });
             listContainer.innerHTML = html;
-        }
-
-        async function resetUser2FA() {
-            const target = secureSelectedUser;
-            if (!target) return showNotification('الرجاء تحديد حساب أولاً!', 'error');
-            
-            if (!confirm(`هل أنت متأكد من إعادة تعيين مفتاح 2FA للحساب: ${target}؟ سيتم إلغاء المفتاح القديم ولن يتمكن من الدخول به.`)) return;
-
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/admin/reset-2fa`, {
-                    method: 'POST', 
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ admin_username: user.username, target_username: target })
-                });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    // عرض المفتاح الجديد في نافذة Prompt ليتمكن المدير من نسخه بسهولة
-                    prompt(`تم إعادة تعيين 2FA بنجاح للحساب ${target}.\n\nانسخ هذا المفتاح وأرسله للمستخدم فوراً (لن يظهر مرة أخرى):`, data.new_secret);
-                    showNotification('تم إعادة تعيين المفتاح!', 'success');
-                } else { 
-                    showNotification(data.detail || 'Erreur', 'error'); 
-                }
-            } catch (e) { 
-                showNotification('Erreur de connexion', 'error'); 
-            }
         }
 
         async function loadSportTickets() {
@@ -770,10 +733,10 @@
                             let badgeColor = t.status === "gagne" ? "text-success" : (t.status === "perdu" ? "text-danger" : (t.status === "cashout" ? "text-warning" : "text-info"));
                             
                             let matchesHtml = Array.isArray(t.details_list) ? 
-                                t.details_list.map(g => `• ${g.matchName.escapeHTML(/</g, "&lt;")} (<span class="text-warning">${g.outcome}</span>)`).join('<br>') : 
-                                (t.match ? t.match.escapeHTML(/</g, "&lt;") : "Match Inconnu");
+                                t.details_list.map(g => `• ${escapeHTML(g.matchName)} (<span class="text-warning">${escapeHTML(g.outcome)}</span>)`).join('<br>') : 
+                                escapeHTML(t.match || "Match Inconnu");
 
-                            let safeTarget = target.escapeHTML(/</g, "&lt;");
+                            let safeTarget = escapeHTML(target);
 
                             allTicketsHtml += `
                                 <div class="bg-black border border-dark rounded-2 p-2 d-flex flex-column gap-1" style="font-size: 0.7rem;">
@@ -782,7 +745,7 @@
                                         <div class="text-secondary" style="font-size: 0.6rem;">Joueur: <span class="text-white fw-bold">${safeTarget}</span></div>
                                         <div class="text-light" style="font-size: 0.6rem;">Mise: ${parseFloat(t.mise).toFixed(2)} | Cote: X${parseFloat(t.total_cote).toFixed(2)}</div>
                                         <div class="fw-bold ${badgeColor}" style="font-size: 0.75rem;">Gain: +${parseFloat(t.gain).toFixed(2)} TND</div>
-                                        <span class="badge border border-secondary py-0 px-1 text-uppercase ${badgeColor}" style="font-size: 0.55rem;">${t.status}</span>
+                                        <span class="badge border border-secondary py-0 px-1 text-uppercase ${badgeColor}" style="font-size: 0.55rem;">${escapeHTML(t.status)}</span>
                                     </div>
                                 </div>`;
                         });
@@ -833,15 +796,6 @@
         function logout() { 
             localStorage.clear(); 
             window.location.href = '/';
-        }
-
-        function copySecretCode(secret, event) {
-            event.stopPropagation(); 
-            navigator.clipboard.writeText(secret).then(() => {
-                showNotification(`Copié: ${secret}`, 'success');
-            }).catch(err => {
-                showNotification('Erreur', 'error');
-            });
         }
 
         let idleTime = 0;

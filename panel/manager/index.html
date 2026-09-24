@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha Bet - Manager Centre</title>
+    <title>COUTABET - Manager Centre</title>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -151,7 +151,7 @@
     <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="sidebar-menu">
         <div class="offcanvas-header border-bottom border-dark px-3 py-2">
             <h6 class="offcanvas-title text-manager fw-bold" style="font-size: 0.85rem;"><i
-                    class="fa-solid fa-user-tie"></i> ALPHA MANAGER</h6>
+                    class="fa-solid fa-user-tie"></i> COUTABET MANAGER</h6>
             <button type="button" class="btn-close btn-close-white btn-sm shadow-none"
                 data-bs-dismiss="offcanvas"></button>
         </div>
@@ -201,8 +201,8 @@
                     type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-menu" style="font-size: 0.75rem;">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <span class="fw-bold text-manager tracking-wide d-none d-md-inline" style="font-size: 0.8rem;">ALPHA
-                    <span class="text-white fw-light">MANAGER</span></span>
+                <span class="fw-bold text-manager tracking-wide d-none d-md-inline" style="font-size: 0.8rem;">COUTA
+                    <span class="text-white fw-light">BET</span></span>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button id="audio-enable-btn" onclick="enableAudio()" class="btn btn-mini btn-outline-info py-0 px-2"
@@ -318,9 +318,6 @@
                         <button onclick="changePlayerPasswordFromAdmin()"
                             class="btn btn-mini btn-info text-dark fw-bold px-2 py-1" style="font-size: 0.7rem;">Change mot de passe 
                             </button>
-                        <button onclick="resetUser2FA()" class="btn btn-mini btn-warning text-dark fw-bold px-2 py-1"
-                            style="font-size: 0.7rem;" title="Créer 2FA"><i class="fa-solid fa-key"></i>
-                            2FA</button>
                     </div>
                 </section>
 
@@ -499,7 +496,7 @@
             toastEl.innerHTML = `
                 <div class="d-flex ${type === 'success' ? 'border-success' : 'border-danger'} border-start border-3 rounded-2" style="background-color: var(--bg-card);">
                     <div class="toast-body fw-bold d-flex gap-2 align-items-center py-2" style="font-size: 0.7rem; color: white;">
-                        <span>${icon}</span> ${message}
+                        <span>${icon}</span>${message}
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto shadow-none btn-sm" data-bs-dismiss="toast"></button>
                 </div>
@@ -599,17 +596,6 @@
                 const userRole = u.role ? u.role.toUpperCase() : 'PLAYER';
                 const statusDot = u.is_blocked === 1 ? 'bg-danger' : 'bg-success';
 
-                // 👉 استخراج كود الـ 2FA (الدرع الأصفر) مع زر النسخ
-                const secretBadge = u.two_factor_secret
-                    ? `<div class="d-inline-flex align-items-center bg-dark border border-secondary rounded px-1 ms-1" onclick="event.stopPropagation()">
-                       <i class="fa-solid fa-shield-halved text-warning me-1" style="font-size: 0.55rem;"></i>
-                       <input type="text" value="${escapeHTML(u.two_factor_secret)}" class="bg-transparent border-0 text-white font-mono p-0 text-center" style="width: 60px; font-size: 0.6rem; outline: none;" readonly>
-                       <button onclick="copySecretCode('${escapeHTML(u.two_factor_secret)}', event)" class="btn btn-sm btn-link text-info p-0 ms-1 shadow-none" style="font-size: 0.6rem;">
-                           <i class="fa-regular fa-copy"></i>
-                       </button>
-                   </div>`
-                    : ``;
-
                 const phoneHtml = u.phone ? `<span class="badge bg-black text-info border border-dark ms-1 px-1 py-0 font-mono" style="font-size: 0.6rem;"><i class="fa-solid fa-phone"></i> ${escapeHTML(u.phone)}</span>` : '';
                 const keyText = u.password || u.key;
                 const keyHtml = keyText ? `<span class="text-success ms-2 font-mono" style="font-size: 0.65rem;"><i class="fa-solid fa-key"></i> ${escapeHTML(keyText)}</span>` : '';
@@ -625,7 +611,7 @@
                             <div class="text-white fw-bold mb-0 d-flex align-items-center flex-wrap gap-1" style="font-size: 0.75rem;">
                                 ${usernameClean} 
                                 <span class="badge bg-dark border border-dark text-secondary font-mono" style="font-size: 0.6rem; padding: 1px 3px;">ID: ${u.id || 'N/A'}</span>
-                                ${secretBadge} ${keyHtml} ${phoneHtml}
+                                ${keyHtml} ${phoneHtml}
                             </div>
                             <div class="text-info font-mono" style="font-size: 0.6rem;">${userRole} • By: ${createdByClean}</div>
                         </div>
@@ -637,12 +623,6 @@
             });
             tbody.innerHTML = html;
         }
-        function copySecretCode(secret, event) {
-            event.stopPropagation();
-            navigator.clipboard.writeText(secret).then(() => {
-                showNotification(`تم نسخ الكود: ${secret}`, 'success');
-            }).catch(err => { showNotification('خطأ في النسخ', 'error'); });
-        }
 
         function selectForControl(username, rtp) {
             secureSelectedUser = username;
@@ -651,32 +631,6 @@
             document.getElementById('ctrl-rtp-range').value = rtp;
             document.getElementById('rtp-val-label').innerText = rtp + '%';
             showNotification(`تم تحديد: ${username}`);
-        }
-
-        async function resetUser2FA() {
-            const target = secureSelectedUser;
-            if (!target) return showNotification('الرجاء تحديد حساب أولاً!', 'error');
-
-            if (!confirm(`هل أنت متأكد من إعادة تعيين مفتاح 2FA للحساب: ${target}؟ سيتم إلغاء المفتاح القديم ولن يتمكن من الدخول به.`)) return;
-
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/admin/reset-2fa`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ admin_username: user.username, target_username: target })
-                });
-                const data = await res.json();
-
-                if (res.ok) {
-                    // عرض المفتاح الجديد في نافذة Prompt ليتمكن المدير من نسخه بسهولة
-                    prompt(`تم إعادة تعيين 2FA بنجاح للحساب ${target}.\n\nانسخ هذا المفتاح وأرسله للمستخدم فوراً (لن يظهر مرة أخرى):`, data.new_secret);
-                    showNotification('تم إعادة تعيين المفتاح!', 'success');
-                } else {
-                    showNotification(data.detail || 'Erreur', 'error');
-                }
-            } catch (e) {
-                showNotification('Erreur de connexion', 'error');
-            }
         }
 
         async function saveRtpAndBlock(isBlocked) {
@@ -953,7 +907,6 @@
             transactions.forEach(t => {
                 const amt = Math.abs(parseFloat(t.amount)).toFixed(2);
 
-                // 👈 التعديل هنا: إضافة dépôt للشرط ليتعرف عليها كعملية شحن خضراء
                 const isCharge = (t.action === 'charge' || t.action === 'dépôt' || t.action === 'deposit_request');
 
                 const color = isCharge ? 'text-success' : 'text-danger';

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALPHA SHOP - لوحة تحكم المحل المعتمد</title>
+    <title>COUTABET - Shop Panel</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -124,7 +124,7 @@
             </div>
 
             <div>
-                <p class="text-secondary fw-black small mb-3 text-uppercase" style="letter-spacing: 2px;">MENU DE GESTION</p>
+                <p class="text-secondary fw-black small mb-3 text-uppercase" style="letter-spacing: 2px;">MANAGEMENT MENU</p>
                 <nav id="shop-sidebar-nav" class="d-flex flex-column">
                     <button onclick="switchShopPanelSection('compte')" id="btn-shop-compte" class="sidebar-link active-shop-btn">
                         👤 Gestion des Joueurs
@@ -186,7 +186,7 @@
         aria-controls="mobileSidebar">
             ☰
         </button>
-        <span class="badge text-emerald fw-bold px-2 py-1 border rounded-2" style="background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); font-size: 0.65rem;" id="shop-username-display">Boutique: Connected</span>
+        <span class="badge text-emerald fw-bold px-2 py-1 border rounded-2" style="background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); font-size: 0.65rem;" id="shop-username-display">COUTABET SHOP</span>
     </div>
     <div class="border-custom px-2 py-1 rounded-2 d-flex align-items-center gap-2" style="background-color: #04060c;">
         <span class="text-secondary font-sans" style="font-size: 0.65rem;">Crédit:</span>
@@ -554,7 +554,10 @@
             const saved = localStorage.getItem('alpha_user');
             if(saved) {
                 shopSessionUser = JSON.parse(saved);
-                document.getElementById('shop-username-display').innerText = `Boutique: ${shopSessionUser.username}`;
+                
+                // تحديث اسم الشوب في الواجهة، مع إمكانية إضافة اسم المتجر الفعلي هنا لو كان مسجلاً في الـ user object
+                document.getElementById('shop-username-display').innerText = `COUTABET SHOP: ${shopSessionUser.username}`;
+                
                 document.getElementById('shop-balance-val').innerText = `${parseFloat(shopSessionUser.balance).toFixed(2)} TND`;
                 await loadShopPlayersData();
             } else {
