@@ -867,6 +867,14 @@
                 } else container.innerHTML = '<div class="text-center p-3 text-danger">Erreur API</div>';
             } catch (e) { container.innerHTML = '<div class="text-center p-3 text-danger">Erreur de connexion</div>'; }
         }
+
+        // دالة حماية النصوص (يجب أن تكون موجودة لكي تعمل قائمة الحسابات)
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.toString().replace(/[&<>'"]/g,
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
     </script>
 </body>
 </html>
