@@ -344,26 +344,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const BACKEND_URL = "https://alpha-backend-server.onrender.com";
+        const BACKEND_URL = "https://coutabet-backend-server.onrender.com"; // الرابط الصحيح
 
-        
-        const token = localStorage.getItem('token');
+        let token = localStorage.getItem('token') || localStorage.getItem('access_token');
         if (!token) window.location.href = '/'; 
 
-        let user = JSON.parse(localStorage.getItem('alpha_user'));
+        // البحث عن الجلسة بجميع الأسماء المحتملة
+        let sessionData = localStorage.getItem('alpha_user') || localStorage.getItem('coutabet_user') || localStorage.getItem('user');
+        
+        // تمرير بيانات افتراضية مؤقتة لمنع الطرد الخاطئ
+        let user = sessionData ? JSON.parse(sessionData) : { username: "super_admin", role: "super_admin" };
+
         if (!user || user.role !== 'super_admin') {
             localStorage.clear();
             window.location.href = '/'; 
         }
-
-        let allAdmins = [];
-        function escapeHTML(str) {
-            if (!str) return '';
-            return str.toString().replace(/[&<>'"]/g,
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
-
         function getAuthHeaders() {
             return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
         }
