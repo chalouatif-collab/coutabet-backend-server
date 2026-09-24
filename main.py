@@ -3018,7 +3018,7 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
     save_db(db)
     return {"status": "success"}
 # ==========================================
-# مسار مؤقت لإنشاء حساب المالك الأول (Owner) مُحصن ضد البيانات التالفة
+# مسار مؤقت لإنشاء حساب المالك (Owner) مُحصن نهائياً
 # ==========================================
 @app.get("/setup-first-owner")
 def setup_first_owner():
@@ -3027,24 +3027,28 @@ def setup_first_owner():
         owner_username = "fethi"
         owner_password = "Coutabet2026!"
         
-        # 1. التحقق مما إذا كان الحساب موجوداً مسبقاً بطريقة آمنة
-        for u in db_data:
-            # نتأكد أولاً أن العنصر هو Dictionary (قاموس) لتجنب خطأ الـ string
-            if isinstance(u, dict):
-                if str(u.get("username", "")).strip().lower() == owner_username.lower():
-                    return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول."}
+        # 1. تحديد قائمة المستخدمين للتعامل معها بشكل صحيح
+        if isinstance(db_data, dict) and "users" in db_data:
+            users_list = db_data["users"]
+        else:
+            users_list = db_data # في حال كانت MagicDB (قائمة)
+            
+        # 2. التحقق مما إذا كان الحساب موجوداً مسبقاً
+        for u in users_list:
+            if isinstance(u, dict) and str(u.get("username", "")).strip().lower() == owner_username.lower():
+                return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول."}
                 
-        # 2. استخراج ID جديد وتجاهل أي بيانات غير صالحة
-        valid_ids = [int(u.get("id", 0)) for u in db_data if isinstance(u, dict) and str(u.get("id", "0")).isdigit()]
+        # 3. استخراج ID جديد
+        valid_ids = [int(u.get("id", 0)) for u in users_list if isinstance(u, dict) and str(u.get("id", "0")).isdigit()]
         new_id = max(valid_ids) + 1 if valid_ids else 1
         
-        # 3. بيانات حساب الأونر
+        # 4. بيانات حساب الأونر
         new_owner = {
             "id": new_id,
             "username": owner_username,
             "password": hash_password(owner_password),
             "role": "owner",
-            "balance": 99999999999999999999999.0,
+            "balance": 9999999999999999999999999999.0,
             "rtp": 50,
             "is_blocked": 0,
             "created_by": "system",
@@ -3054,8 +3058,14 @@ def setup_first_owner():
             "phone": "00000000"
         }
         
-        db_data.append(new_owner)
-        save_db(db_data) 
+        # 5. الإضافة والحفظ
+        users_list.append(new_owner)
+        
+        if isinstance(db_data, dict) and "users" in db_data:
+            db_data["users"] = users_list
+            save_db(db_data)
+        else:
+            save_db(db_data)
         
         return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح! يمكنك الآن تسجيل الدخول."}
     except Exception as e:
