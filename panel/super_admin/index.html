@@ -447,17 +447,27 @@
 
                 if(uRes.ok){
                     const users = await uRes.json();
-                    const me = users.find(u => u.username === user.username);
+                    
+                    // 🛡️ درع الحماية: فلترة الحسابات الفارغة أو المعطوبة القادمة من Firebase
+                    const validUsers = users.filter(u => u !== null && typeof u === 'object');
+
+                    const me = validUsers.find(u => u.username === user.username);
                     if(me) {
                         user.balance = me.balance;
                         document.getElementById('sadmin-balance-val').innerText = `${parseFloat(user.balance).toFixed(2)} TND`;
-                        localStorage.setItem('alpha_user', JSON.stringify(user));
+                        
+                        // تحديث الجلسة بمرونة
+                        let sessionKey = localStorage.getItem('alpha_user') ? 'alpha_user' : (localStorage.getItem('coutabet_user') ? 'coutabet_user' : 'user');
+                        localStorage.setItem(sessionKey, JSON.stringify(user));
                     }
-                    allAdmins = users.filter(u => u.role === 'admin' && u.created_by === user.username);
+                    
+                    // جلب الأدمنز التابعين للسوبر أدمن الحالي فقط
+                    allAdmins = validUsers.filter(u => u.role === 'admin' && u.created_by === user.username);
                     renderAdminsList(allAdmins);
                 }
             } catch(e){
-                document.getElementById('owner-network-list').innerHTML = `<div class="text-center p-2 text-danger" style="font-size: 0.7rem;">خطأ في الاتصال ❌</div>`;
+                console.error("تفاصيل الخطأ المخفي:", e); // لطباعة الخطأ الحقيقي في الكونسول
+                document.getElementById('owner-network-list').innerHTML = `<div class="text-center p-2 text-danger" style="font-size: 0.7rem;">خطأ في معالجة البيانات ❌</div>`;
             }
         }
 
