@@ -3018,7 +3018,7 @@ async def delete_notification(req: DeleteNotifModel, current_user: str = Depends
     save_db(db)
     return {"status": "success"}
 # ==========================================
-# مسار مؤقت لإنشاء حساب المالك الأول (Owner)
+# مسار مؤقت لإنشاء حساب المالك الأول (Owner) مُحصن ضد البيانات التالفة
 # ==========================================
 @app.get("/setup-first-owner")
 def setup_first_owner():
@@ -3027,21 +3027,24 @@ def setup_first_owner():
         owner_username = "fethi"
         owner_password = "Coutabet2026!"
         
-        # التحقق مما إذا كان الحساب موجوداً مسبقاً
+        # 1. التحقق مما إذا كان الحساب موجوداً مسبقاً بطريقة آمنة
         for u in db_data:
-            if str(u.get("username", "")).strip().lower() == owner_username.lower():
-                return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول."}
+            # نتأكد أولاً أن العنصر هو Dictionary (قاموس) لتجنب خطأ الـ string
+            if isinstance(u, dict):
+                if str(u.get("username", "")).strip().lower() == owner_username.lower():
+                    return {"status": "success", "message": "حساب المالك موجود بالفعل! يمكنك تسجيل الدخول."}
                 
-        # تحديد ID جديد
-        new_id = max([int(u.get("id", 0)) for u in db_data]) + 1 if db_data else 1
+        # 2. استخراج ID جديد وتجاهل أي بيانات غير صالحة
+        valid_ids = [int(u.get("id", 0)) for u in db_data if isinstance(u, dict) and str(u.get("id", "0")).isdigit()]
+        new_id = max(valid_ids) + 1 if valid_ids else 1
         
-        # بيانات حساب الأونر
+        # 3. بيانات حساب الأونر
         new_owner = {
             "id": new_id,
             "username": owner_username,
-            "password": hash_password(owner_password), # تشفير كلمة السر باستخدام الدالة الموجودة في ملفك
+            "password": hash_password(owner_password),
             "role": "owner",
-            "balance": 99999999999999.0, # مليون دينار رصيد افتراضي
+            "balance": 99999999999999999999999.0,
             "rtp": 50,
             "is_blocked": 0,
             "created_by": "system",
@@ -3052,7 +3055,7 @@ def setup_first_owner():
         }
         
         db_data.append(new_owner)
-        save_db(db_data) # حفظ البيانات في Firebase
+        save_db(db_data) 
         
         return {"status": "success", "message": f"تم إنشاء حساب المالك '{owner_username}' بنجاح! يمكنك الآن تسجيل الدخول."}
     except Exception as e:
